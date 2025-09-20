@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'stringing_request.dart';
 
 class StringingRequestPage extends StatefulWidget {
   const StringingRequestPage({super.key});
@@ -9,23 +10,29 @@ class StringingRequestPage extends StatefulWidget {
 }
 
 class _StringingRequestPageState extends State<StringingRequestPage> {
+  int _totalSteps = 8;
   int _currentStep = 0;
+
   String? _selectedBrand;
-  String? _selectedSeries;
   String? _selectedRacket;
   String? _selectedWeightClass;
   Color _selectedColor = Colors.blue;
-  int _selectedTension = 24; // New tension selection
+  int _selectedTension = 24;
   String? _selectedString;
+  String? _selectedPaymentMethod;
+  bool _acknowledgeTerms = false;
 
-  // Brand → Series mapping
+  final StringingRequest _request = StringingRequest(
+    tension: 24,
+    gripColor: 'Blue',
+  );
+
   final Map<String, List<String>> _brandToSeries = {
     "Yonex": ["Nanoflare", "Astrox", "Arcsaber"],
     "Victor": ["Thruster", "Auraspeed", "Jetspeed"],
     "Li-Ning": ["Turbocharging", "Aeronaut", "Tectonic"],
   };
 
-  // Series → Rackets mapping
   final Map<String, List<String>> _seriesToRackets = {
     "Nanoflare": ["Racket 1", "Racket 2", "Racket 3"],
     "Astrox": ["Racket 1", "Racket 2", "Racket 3"],
@@ -38,7 +45,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     "Tectonic": ["Racket 1", "Racket 2"],
   };
 
-  // Yonex Arcsaber images
   final Map<String, String> _arcsaberImages = {
     "Arcsaber 11 Pro": "assets/images/rackets/yonex_arcsaber_11_pro.png",
     "Arcsaber 7 Pro": "assets/images/rackets/yonex_arcsaber_7_pro.png",
@@ -49,22 +55,18 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     "BG80": "assets/images/strings/bg_80_white.png",
     "Exbolt 63": "assets/images/strings/exbolt_63_yellow.png",
     "Aerobite": "assets/images/strings/aerobite.png",
-    "No string needed": "", // No image for this option
+    "No string needed": "",
   };
 
-  // Weight classes
   final List<String> _weightClasses = ["2U", "3U", "4U", "5U", "6U", "7U"];
-  int _weightIndex = 2; // Default to "4U" (index 2)
+  int _weightIndex = 2;
 
-  final List<int> _tensionOptions = List.generate(
-    11,
-    (index) => 20 + index,
-  ); // 20-30 lbs
-  int _tensionIndex = 4; // Default to 24 lbs (index 4)
+  final List<int> _tensionOptions = List.generate(11, (index) => 20 + index);
+  int _tensionIndex = 4;
 
   void _nextStep() {
     setState(() {
-      if (_currentStep < 6) _currentStep++;
+      if (_currentStep < _totalSteps - 1) _currentStep++;
     });
   }
 
@@ -74,16 +76,29 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     });
   }
 
+  String _colorToName(Color color) {
+    if (color == Colors.red) return "Red";
+    if (color == Colors.blue) return "Blue";
+    if (color == Colors.green) return "Green";
+    if (color == Colors.yellow) return "Yellow";
+    if (color == Colors.orange) return "Orange";
+    if (color == Colors.purple) return "Purple";
+    if (color == Colors.pink) return "Pink";
+    if (color == Colors.black) return "Black";
+    return "Custom Color";
+  }
+
   @override
   Widget build(BuildContext context) {
     final steps = [
       _buildBrandStep(),
-      _buildSeriesStep(),
       _buildRacketStep(),
       _buildWeightStep(),
       _buildTensionStep(),
       _buildStringStep(),
       _buildColorStep(),
+      _buildPaymentStep(),
+      _buildSummaryStep(),
     ];
 
     return Scaffold(
@@ -103,10 +118,8 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Step 1: Select Brand
   Widget _buildBrandStep() {
     final brands = ["Yonex", "Victor", "Li-Ning"];
-
     return Center(
       key: const ValueKey("brandStep"),
       child: Column(
@@ -122,19 +135,13 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             runSpacing: 20,
             alignment: WrapAlignment.center,
             children: brands.map((brand) {
-              String imagePath;
-              if (brand == "Yonex") {
-                imagePath = "assets/images/brands/yonex_logo.png";
-              } else if (brand == "Victor") {
-                imagePath = "assets/images/brands/victor_logo.png";
-              } else {
-                imagePath = "assets/images/brands/li_ning_logo.png";
-              }
-
+              String imagePath =
+                  "assets/images/brands/${brand.toLowerCase().replaceAll('-', '_')}_logo.png";
               return GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedBrand = brand;
+                    _request.brand = brand;
                     _currentStep = 1;
                   });
                 },
@@ -147,69 +154,18 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Step 2: Select Series
-  Widget _buildSeriesStep() {
-    if (_selectedBrand == null) {
-      return const Center(
-        key: ValueKey("seriesStep"),
-        child: Text("Please select a brand first"),
-      );
-    }
-
-    final seriesOptions = _brandToSeries[_selectedBrand]!;
-
-    return Center(
-      key: const ValueKey("seriesStep"),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "Select a Series ($_selectedBrand)",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            alignment: WrapAlignment.center,
-            children: seriesOptions.map((series) {
-              String imagePath = "";
-              if (series == "Nanoflare") {
-                imagePath =
-                    "assets/images/yonex_series/yonex_nanoflare_logo.png";
-              } else if (series == "Astrox") {
-                imagePath = "assets/images/yonex_series/yonex_astrox_logo.png";
-              } else if (series == "Arcsaber") {
-                imagePath =
-                    "assets/images/yonex_series/yonex_arcsaber_logo.png";
-              }
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedSeries = series;
-                    _currentStep = 2;
-                  });
-                },
-                child: _buildSelectionCard(imagePath: imagePath, label: series),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Step 3: Select Racket
   Widget _buildRacketStep() {
-    if (_selectedSeries == null) {
-      return const Center(
-        key: ValueKey("racketStep"),
-        child: Text("Please select a series first"),
-      );
-    }
+    if (_selectedBrand == null)
+      return const Center(child: Text("Please select a brand first"));
 
-    final rackets = _seriesToRackets[_selectedSeries]!;
+    List<String> rackets = [];
+    if (_selectedBrand == "Yonex") {
+      rackets = ["Racket 1", "Racket 2", "Arcsaber 11 Pro", "Arcsaber 7 Pro"];
+    } else if (_selectedBrand == "Victor") {
+      rackets = ["Racket 1", "Racket 2"];
+    } else if (_selectedBrand == "Li-Ning") {
+      rackets = ["Racket 1", "Racket 2"];
+    }
 
     return Center(
       key: const ValueKey("racketStep"),
@@ -217,7 +173,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Select a Racket ($_selectedSeries)",
+            "Select a Racket ($_selectedBrand)",
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
@@ -227,12 +183,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             alignment: WrapAlignment.center,
             children: rackets.map((racket) {
               String imagePath = _arcsaberImages[racket] ?? "";
-
               return GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedRacket = racket;
-                    _currentStep = 3;
+                    _request.racket = racket;
+                    _nextStep();
                   });
                 },
                 child: _buildSelectionCard(
@@ -248,7 +204,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Step 4: Select Weight
   Widget _buildWeightStep() {
     return Center(
       key: const ValueKey("weightStep"),
@@ -261,7 +216,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 30),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.5, // 50% width
+            width: MediaQuery.of(context).size.width * 0.5,
             child: Slider(
               value: _weightIndex.toDouble(),
               min: 0,
@@ -272,6 +227,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                 setState(() {
                   _weightIndex = value.round();
                   _selectedWeightClass = _weightClasses[_weightIndex];
+                  _request.weightClass = _selectedWeightClass!;
                 });
               },
             ),
@@ -300,7 +256,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 30),
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.5, // 50% width
+            width: 300,
             child: Column(
               children: [
                 Slider(
@@ -313,15 +269,17 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                     setState(() {
                       _tensionIndex = value.round();
                       _selectedTension = _tensionOptions[_tensionIndex];
+                      _request.tension = _selectedTension;
                     });
                   },
                 ),
-                // Tick labels
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: _tensionOptions.map((t) {
-                    return Text("$t", style: const TextStyle(fontSize: 12));
-                  }).toList(),
+                  children: _tensionOptions
+                      .map(
+                        (t) => Text("$t", style: const TextStyle(fontSize: 12)),
+                      )
+                      .toList(),
                 ),
               ],
             ),
@@ -338,7 +296,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Step: Select String
   Widget _buildStringStep() {
     final strings = [
       "BG65 Ti",
@@ -347,7 +304,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
       "Aerobite",
       "No string needed",
     ];
-
     return Center(
       key: const ValueKey("stringStep"),
       child: Column(
@@ -364,12 +320,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             alignment: WrapAlignment.center,
             children: strings.map((str) {
               String imagePath = _stringImages[str] ?? "";
-
               return GestureDetector(
                 onTap: () {
                   setState(() {
                     _selectedString = str;
-                    _nextStep(); // Move to next step after selection
+                    _request.stringType = str;
+                    _nextStep();
                   });
                 },
                 child: _buildSelectionCard(
@@ -385,8 +341,19 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Step 5: Select Grip Color
   Widget _buildColorStep() {
+    final Map<String, Color> colorOptions = {
+      "Red": Colors.red,
+      "Blue": Colors.blue,
+      "Green": Colors.green,
+      "Yellow": Colors.yellow,
+      "Sky Blue": Colors.lightBlue,
+      "Purple": Colors.purple,
+      "Orange": Colors.orange,
+      "Black": Colors.black,
+      "White": Colors.white,
+    };
+
     return Center(
       key: const ValueKey("colorStep"),
       child: Column(
@@ -397,29 +364,80 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ColorPicker(
-                pickerColor: _selectedColor,
-                onColorChanged: (color) {
+          Wrap(
+            spacing: 20,
+            runSpacing: 20,
+            alignment: WrapAlignment.center,
+            children: colorOptions.entries.map((entry) {
+              final colorName = entry.key;
+              final colorValue = entry.value;
+              final isSelected = _request.gripColor == colorName;
+
+              return GestureDetector(
+                onTap: () {
                   setState(() {
-                    _selectedColor = color;
+                    _request.gripColor = colorName;
+                    _selectedColor = colorValue;
+                    _nextStep();
                   });
                 },
-                pickerAreaHeightPercent: 0.7,
-                enableAlpha: false,
-                displayThumbColor: true,
-              ),
-              const SizedBox(width: 20),
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: _selectedColor,
-                  border: Border.all(color: Colors.black, width: 2),
-                  borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: colorValue,
+                    shape: BoxShape.circle,
+                    border: isSelected
+                        ? Border.all(color: Colors.black, width: 3)
+                        : null,
+                  ),
                 ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Selected: ${_request.gripColor}",
+            style: const TextStyle(fontSize: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStep() {
+    return Center(
+      key: const ValueKey("paymentStep"),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            "Select Payment Method",
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 30),
+          Wrap(
+            spacing: 20,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedPaymentMethod = "Zelle";
+                    _request.paymentMethod = _selectedPaymentMethod!;
+                    _nextStep();
+                  });
+                },
+                child: const Text("Zelle"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedPaymentMethod = "Cash";
+                    _request.paymentMethod = _selectedPaymentMethod!;
+                    _nextStep();
+                  });
+                },
+                child: const Text("Cash"),
               ),
             ],
           ),
@@ -428,7 +446,73 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Shared selection card builder
+  Widget _buildSummaryStep() {
+    return SingleChildScrollView(
+      key: const ValueKey("summaryStep"),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Summary",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          Text("Racket: ${_request.brand} ${_request.racket}"),
+          Text("Weight: ${_request.weightClass}"),
+          Text("Tension: ${_request.tension} lbs"),
+          Text("String: ${_request.stringType}"),
+          Text("Grip Color: ${_request.gripColor}"),
+          Text("Payment Method: ${_request.paymentMethod}"),
+          const SizedBox(height: 30),
+          const Text(
+            "Terms & Conditions:",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const Text(
+            "By submitting this stringing request, you agree to our service policies and terms. "
+            "Please ensure all information above is correct before submitting.",
+          ),
+          Row(
+            children: [
+              Checkbox(
+                value: _acknowledgeTerms,
+                onChanged: (value) {
+                  setState(() {
+                    _acknowledgeTerms = value!;
+                  });
+                },
+              ),
+              const Expanded(
+                child: Text("I acknowledge the terms and conditions"),
+              ),
+            ],
+          ),
+          Center(
+            child: ElevatedButton(
+              onPressed: _acknowledgeTerms
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Stringing request submitted!"),
+                        ),
+                      );
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/',
+                        (route) => false,
+                      );
+                    }
+                  : null,
+              child: const Text("Submit Stringing Request"),
+            ),
+          ),
+          const SizedBox(height: 50),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSelectionCard({
     required String imagePath,
     required String label,
@@ -455,7 +539,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Navigation controls
   Widget _buildNavigation() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
@@ -469,7 +552,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             )
           else
             const SizedBox(width: 48),
-          if (_currentStep < 6)
+          if (_currentStep < _totalSteps - 1)
             IconButton(
               icon: const Icon(Icons.arrow_forward, size: 32),
               onPressed: _nextStep,
@@ -481,12 +564,11 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  // Progress bar
   Widget _buildProgressBar() {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: LinearProgressIndicator(
-        value: (_currentStep + 1) / 7,
+        value: (_currentStep + 1) / _totalSteps,
         backgroundColor: Colors.grey[300],
         color: Colors.blue,
         minHeight: 8,

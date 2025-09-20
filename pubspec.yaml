@@ -30,12 +30,14 @@ environment:
 dependencies:
   flutter_dotenv: ^6.0.0
   flutter_colorpicker: ^1.1.0
+  uuid: ^4.5.1
 
   flutter:
     sdk: flutter
 
   firebase_core: ^4.1.0
   firebase_auth: ^6.0.2
+  cloud_firestore: ^5.10.0
   google_sign_in: ^6.1.4
     
       

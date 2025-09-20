@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 // Import the customer extra page
-import 'stringing_request_page.dart';
+import 'request_page.dart';
 
 class GoogleLoginPage extends StatefulWidget {
   const GoogleLoginPage({super.key});
