@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'stringing_request.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class StringingRequestPage extends StatefulWidget {
   const StringingRequestPage({super.key});
@@ -27,27 +29,50 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     gripColor: 'Blue',
   );
 
-  final Map<String, List<String>> _brandToSeries = {
-    "Yonex": ["Nanoflare", "Astrox", "Arcsaber"],
-    "Victor": ["Thruster", "Auraspeed", "Jetspeed"],
-    "Li-Ning": ["Turbocharging", "Aeronaut", "Tectonic"],
-  };
+  final Map<String, String> yonexImages = {
+    "Nanoflare Nextage (Gray)":
+        "assets/images/yonex_rackets/yonex_nanoflare_nextage_gray.png",
+    "Nanoflare Nextage (White)":
+        "assets/images/yonex_rackets/yonex_nanoflare_nextage_white.png",
 
-  final Map<String, List<String>> _seriesToRackets = {
-    "Nanoflare": ["Racket 1", "Racket 2", "Racket 3"],
-    "Astrox": ["Racket 1", "Racket 2", "Racket 3"],
-    "Arcsaber": ["Arcsaber 11 Pro", "Arcsaber 7 Pro"],
-    "Thruster": ["Racket 1", "Racket 2"],
-    "Auraspeed": ["Racket 1", "Racket 2"],
-    "Jetspeed": ["Racket 1", "Racket 2"],
-    "Turbocharging": ["Racket 1", "Racket 2"],
-    "Aeronaut": ["Racket 1", "Racket 2"],
-    "Tectonic": ["Racket 1", "Racket 2"],
-  };
+    "Nanoflare 700 (Blue)":
+        "assets/images/yonex_rackets/yonex_nanoflare_700_blue.png",
+    "Nanoflare 700 Pro":
+        "assets/images/yonex_rackets/yonex_nanoflare_700_pro.png",
 
-  final Map<String, String> _arcsaberImages = {
-    "Arcsaber 11 Pro": "assets/images/rackets/yonex_arcsaber_11_pro.png",
-    "Arcsaber 7 Pro": "assets/images/rackets/yonex_arcsaber_7_pro.png",
+    "Nanoflare 800 Pro":
+        "assets/images/yonex_rackets/yonex_nanoflare_800_pro.png",
+
+    "Nanoflare 1000Z": "assets/images/yonex_rackets/yonex_nanoflare_1000z.png",
+
+    "Arcsaber 11 Pro": "assets/images/yonex_rackets/yonex_arcsaber_11_pro.png",
+    "Arcsaber 7 Pro": "assets/images/yonex_rackets/yonex_arcsaber_7_pro.png",
+
+    "Astrox 77 Pro (High Orange)":
+        "assets/images/yonex_rackets/yonex_astrox_77_pro.png",
+
+    "Astrox 88D Pro (Camel Gold)":
+        "assets/images/yonex_rackets/yonex_astrox_2nd_88d_pro.png",
+    "Astrox 88S Pro (Emerald Blue)":
+        "assets/images/yonex_rackets/yonex_astrox_2nd_88s_pro.png",
+
+    "Astrox 88D Pro (Black/Silver)":
+        "assets/images/yonex_rackets/yonex_astrox_3rd_88d_pro.png",
+    "Astrox 88S Pro (Silver/Black)":
+        "assets/images/yonex_rackets/yonex_astrox_3rd_88s_pro.png",
+
+    "Astrox 99 Pro (Cherry Red)":
+        "assets/images/yonex_rackets/yonex_astrox_1st_99_pro_cherry_red.png",
+    "Astrox 99 Pro (White Tiger)":
+        "assets/images/yonex_rackets/yonex_astrox_1st_99_pro_white_tiger.png",
+
+    "Astrox 99 Pro (Black/Green)":
+        "assets/images/yonex_rackets/yonex_astrox_2nd_99_pro.png",
+
+    "Astrox 100ZZ (Kurenai)":
+        "assets/images/yonex_rackets/yonex_astrox_100_zz_kurenai.png",
+    "Astrox 100ZZ (Navy Blue)":
+        "assets/images/yonex_rackets/yonex_astrox_100_zz_navy_blue.png",
   };
 
   final Map<String, String> _stringImages = {
@@ -160,7 +185,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
 
     List<String> rackets = [];
     if (_selectedBrand == "Yonex") {
-      rackets = ["Racket 1", "Racket 2", "Arcsaber 11 Pro", "Arcsaber 7 Pro"];
+      rackets = yonexImages.keys.toList();
     } else if (_selectedBrand == "Victor") {
       rackets = ["Racket 1", "Racket 2"];
     } else if (_selectedBrand == "Li-Ning") {
@@ -182,7 +207,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             runSpacing: 20,
             alignment: WrapAlignment.center,
             children: rackets.map((racket) {
-              String imagePath = _arcsaberImages[racket] ?? "";
+              String imagePath = yonexImages[racket] ?? "";
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -490,20 +515,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           Center(
             child: ElevatedButton(
-              onPressed: _acknowledgeTerms
-                  ? () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Stringing request submitted!"),
-                        ),
-                      );
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/',
-                        (route) => false,
-                      );
-                    }
-                  : null,
+              onPressed: _acknowledgeTerms ? _submitRequest : null,
               child: const Text("Submit Stringing Request"),
             ),
           ),
@@ -574,5 +586,65 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         minHeight: 8,
       ),
     );
+  }
+
+  Future<void> _submitRequest() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("You must be logged in to submit a request"),
+          ),
+        );
+        return;
+      }
+
+      final uid = user.uid;
+      final displayName = user.displayName ?? "Unknown User";
+      final email = user.email ?? "";
+
+      // Optional: split first and last names
+      final nameParts = displayName.split(" ");
+      final firstName = nameParts.isNotEmpty ? nameParts.first : "";
+      final lastName = nameParts.length > 1
+          ? nameParts.sublist(1).join(" ")
+          : "";
+
+      // Save user info (creates/updates user doc)
+      final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+      await userDoc.set({
+        'firstName': firstName,
+        'lastName': lastName,
+        //'fullName': displayName,
+        'email': email,
+      }, SetOptions(merge: true));
+
+      // Save stringing request under this user
+      final requestData = {
+        'brand': _request.brand,
+        'racket': _request.racket,
+        'weightClass': _request.weightClass,
+        'tension': _request.tension,
+        'stringType': _request.stringType,
+        'gripColor': _request.gripColor,
+        'paymentMethod': _request.paymentMethod,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      await userDoc.collection('stringingRequests').add(requestData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Stringing request submitted successfully!"),
+        ),
+      );
+
+      Navigator.pushNamed(context, '/');
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error submitting request: $e")));
+    }
   }
 }
