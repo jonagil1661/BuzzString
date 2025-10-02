@@ -64,7 +64,7 @@ Victor DriveX Doraemon
 Victor DriveX Metallic C
 Victor DriveX 10 Metallic B
 Victor DriveX 9X
-Victor Thruster K Falcon Enhance
+Victor Thruster K Falcon Enhanced
 Victor Thruster TTY-A
 Victor Thruster TTY Ultima
 Victor Thruster F Ultra
