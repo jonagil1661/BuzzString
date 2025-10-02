@@ -5,10 +5,10 @@ class StringingRequest {
   String series;
   String racket;
   String weightClass;
-  int tension;
+  int? tension;
   String stringType;
   String gripColor;
-  String racketColor;
+  List<String> racketColors;
   String paymentMethod;
   String additionalQuestions;
 
@@ -17,10 +17,10 @@ class StringingRequest {
     this.series = '',
     this.racket = '',
     this.weightClass = '4U',
-    this.tension = 24,
+    this.tension,
     this.stringType = '',
     this.gripColor = '',
-    this.racketColor = '',
+    this.racketColors = const [],
     this.paymentMethod = '',
     this.additionalQuestions = '',
   });
@@ -30,10 +30,10 @@ class StringingRequest {
     series = '';
     racket = '';
     weightClass = '';
-    tension = 24;
+    tension = null;
     stringType = '';
     gripColor = '';
-    racketColor = '';
+    racketColors = [];
     paymentMethod = '';
     additionalQuestions = '';
   }

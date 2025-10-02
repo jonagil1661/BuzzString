@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'google_login_page.dart';
 import 'home_page.dart';
+import 'stringer_home_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const GoogleLoginPage(),
         '/home': (context) => const HomePage(),
+        '/stringer': (context) => const StringerHomePage(),
       },
     );
   }

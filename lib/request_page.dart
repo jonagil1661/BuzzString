@@ -28,28 +28,26 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   final TextEditingController _additionalQuestionsController = TextEditingController();
   
   Color _selectedColor = Colors.blue;
-  Color _selectedRacketColor = Colors.blue;
-  int _selectedTension = 24;
+  List<String> _selectedRacketColors = [];
+  int? _selectedTension;
   String? _selectedString;
   String? _selectedPaymentMethod;
   bool _acknowledgeTerms = false;
 
-  final StringingRequest _request = StringingRequest(
-    tension: 24,
-  );
+  final StringingRequest _request = StringingRequest();
 
 
   final Map<String, String> _stringImages = {
-    "BG65 Ti White\n(\$22)": "assets/images/strings/bg_65_ti_white.png",
-    "BG80\n(\$24)": "assets/images/strings/bg_80_white.png",
-    "Exbolt 63 Yellow\n(\$25)": "assets/images/strings/exbolt_63_yellow.png",
-    "Aerobite White/Red\n(\$26)": "assets/images/strings/aerobite.png",
+    "BG65 Ti\nWhite\n(\$22)": "assets/images/strings/bg_65_ti_white.png",
+    "BG80\nWhite\n(\$24)": "assets/images/strings/bg_80_white.png",
+    "Exbolt 63\nYellow\n(\$25)": "assets/images/strings/exbolt_63_yellow.png",
+    "Aerobite\nWhite/Red\n(\$26)": "assets/images/strings/aerobite.png",
     "I have my own string\n(\$18)": "",
   };
 
 
   final List<int> _tensionOptions = List.generate(11, (index) => 20 + index);
-  int _tensionIndex = 4;
+  int _tensionIndex = -1;
 
   List<String> _availableRackets = [];
 
@@ -163,14 +161,14 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     switch (stepIndex) {
       case 0:
         return _racketInfoEntered && 
-               _request.racketColor.isNotEmpty && 
+               _selectedRacketColors.isNotEmpty && 
                _request.gripColor.isNotEmpty;
       case 1:
         if (!_stringTypeSelected) return false;
         if (_selectedString == "I have my own string\n(\$18)" && _showCustomStringInput) {
           return _customStringController.text.isNotEmpty;
         }
-        return true;
+        return _selectedTension != null;
       case 2:
         return _selectedPaymentMethod != null;
       case 3:
@@ -278,12 +276,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 20),
           const Text(
-            "Enter your racket information in the format: [Brand] [Model] [Racket] [Weight]",
+            "Enter your racket information in the format: [Brand] [Series] [Model]",
             style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 10),
           const Text(
-            "Example: Yonex Arcsaber 11 Pro 3U",
+            "Example: Yonex Arcsaber 11 Pro",
             style: TextStyle(fontSize: 14, color: Colors.blue, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 30),
@@ -366,7 +364,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           const SizedBox(height: 20),
           Text(
             _racketInfoEntered 
-                ? "Select the color of your racket:"
+                ? "Select up to 3 colors for your racket (minimum 1):"
                 : "Please enter racket information first",
             style: TextStyle(
               fontSize: 16, 
@@ -374,30 +372,41 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
               fontWeight: _racketInfoEntered ? FontWeight.normal : FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
+          if (_racketInfoEntered) ...[
+            Text(
+              "Selected: ${_selectedRacketColors.length}/3 colors",
+              style: TextStyle(
+                fontSize: 14,
+                color: _selectedRacketColors.isEmpty ? Colors.orange : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
           Opacity(
             opacity: _racketInfoEntered ? 1.0 : 0.5,
-            child: _buildColorPicker(
-              selectedColor: _request.racketColor,
-              onColorChanged: (colorName) {
+            child: _buildMultiColorPicker(
+              selectedColors: _selectedRacketColors,
+              onColorsChanged: (colors) {
                 setState(() {
-                  _request.racketColor = colorName;
-                  _selectedRacketColor = _nameToColor(colorName);
+                  _selectedRacketColors = colors;
+                  _request.racketColors = colors;
                 });
               },
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            _request.racketColor.isNotEmpty 
-                ? "Selected Racket Color: ${_request.racketColor}"
-                : "Please select a racket color",
+            _selectedRacketColors.isNotEmpty 
+                ? "Selected Racket Colors: ${_selectedRacketColors.join(', ')}"
+                : "Please select at least one racket color",
             style: TextStyle(
               fontSize: 18,
               color: _racketInfoEntered ? 
-                  (_request.racketColor.isNotEmpty ? Colors.black : Colors.orange) 
+                  (_selectedRacketColors.isNotEmpty ? Colors.black : Colors.orange) 
                   : Colors.grey,
-              fontWeight: _request.racketColor.isEmpty ? FontWeight.bold : FontWeight.normal,
+              fontWeight: _selectedRacketColors.isEmpty ? FontWeight.bold : FontWeight.normal,
             ),
             textAlign: TextAlign.center,
           ),
@@ -407,34 +416,34 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(
               fontSize: 24, 
               fontWeight: FontWeight.bold,
-              color: (_racketInfoEntered && _request.racketColor.isNotEmpty) ? Colors.black : Colors.grey,
+              color: (_racketInfoEntered && _selectedRacketColors.isNotEmpty) ? Colors.black : Colors.grey,
             ),
           ),
           const SizedBox(height: 20),
           Text(
             !_racketInfoEntered 
                 ? "Please enter racket information first"
-                : _request.racketColor.isEmpty
-                    ? "Please select racket color first"
+                : _selectedRacketColors.isEmpty
+                    ? "Please select racket colors first"
                     : "Select the color for your racket grip:",
             style: TextStyle(
               fontSize: 16, 
               color: !_racketInfoEntered 
                   ? Colors.orange
-                  : _request.racketColor.isEmpty 
+                  : _selectedRacketColors.isEmpty 
                       ? Colors.orange
                       : Colors.grey,
-              fontWeight: (!_racketInfoEntered || _request.racketColor.isEmpty) 
+              fontWeight: (!_racketInfoEntered || _selectedRacketColors.isEmpty) 
                   ? FontWeight.bold 
                   : FontWeight.normal,
             ),
           ),
           const SizedBox(height: 30),
           Opacity(
-            opacity: (_racketInfoEntered && _request.racketColor.isNotEmpty) ? 1.0 : 0.5,
+            opacity: (_racketInfoEntered && _selectedRacketColors.isNotEmpty) ? 1.0 : 0.5,
             child: _buildColorPicker(
               selectedColor: _request.gripColor,
-              onColorChanged: (_racketInfoEntered && _request.racketColor.isNotEmpty) 
+              onColorChanged: (_racketInfoEntered && _selectedRacketColors.isNotEmpty) 
                   ? (colorName) {
                       setState(() {
                         _request.gripColor = colorName;
@@ -448,14 +457,14 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           Text(
             _request.gripColor.isNotEmpty 
                 ? "Selected Grip Color: ${_request.gripColor}"
-                : (_racketInfoEntered && _request.racketColor.isNotEmpty)
+                : (_racketInfoEntered && _selectedRacketColors.isNotEmpty)
                     ? "Please select a grip color"
-                    : "Select racket color first",
+                    : "Select racket colors first",
             style: TextStyle(
               fontSize: 18,
               color: _request.gripColor.isNotEmpty 
                   ? Colors.black
-                  : (_racketInfoEntered && _request.racketColor.isNotEmpty)
+                  : (_racketInfoEntered && _selectedRacketColors.isNotEmpty)
                       ? Colors.orange
                       : Colors.grey,
               fontWeight: _request.gripColor.isEmpty ? FontWeight.bold : FontWeight.normal,
@@ -518,13 +527,66 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
+  Widget _buildMultiColorPicker({required List<String> selectedColors, required Function(List<String>) onColorsChanged}) {
+    final Map<String, Color> colorOptions = {
+      "Red": Colors.red,
+      "Orange": Colors.orange,
+      "Yellow": Colors.yellow,
+      "Green": Colors.green,
+      "Blue": Colors.blue,
+      "Purple": Colors.purple,
+      "Brown": Colors.brown,
+      "White": Colors.white,
+      "Black": Colors.black,
+      "Pink": Colors.pink,
+      "Gray": Colors.grey,
+    };
+
+    return Wrap(
+      spacing: 20,
+      runSpacing: 20,
+      alignment: WrapAlignment.center,
+      children: colorOptions.entries.map((entry) {
+        final colorName = entry.key;
+        final colorValue = entry.value;
+        final isSelected = selectedColors.contains(colorName);
+
+        return GestureDetector(
+          onTap: () {
+            List<String> newColors = List.from(selectedColors);
+            if (isSelected) {
+              newColors.remove(colorName);
+            } else if (newColors.length < 3) {
+              newColors.add(colorName);
+            }
+            onColorsChanged(newColors);
+          },
+          child: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: colorValue,
+              shape: BoxShape.circle,
+              border: isSelected
+                  ? Border.all(color: Colors.black, width: 3)
+                  : Border.all(color: Colors.grey.shade300, width: 1),
+            ),
+            child: isSelected
+                ? const Icon(Icons.check, color: Colors.white, size: 24)
+                : null,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
 
   Widget _buildStringAndTensionStep() {
     final strings = [
-      "BG65 Ti White\n(\$22)",
-      "BG80\n(\$24)",
-      "Exbolt 63 Yellow\n(\$25)",
-      "Aerobite White/Red\n(\$26)",
+      "BG65 Ti\nWhite\n(\$22)",
+      "BG80\nWhite\n(\$24)",
+      "Exbolt 63\nYellow\n(\$25)",
+      "Aerobite\nWhite/Red\n(\$26)",
       "I have my own string\n(\$18)",
     ];
 
@@ -687,11 +749,11 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
               child: Column(
                 children: [
                   Slider(
-                    value: _tensionIndex.toDouble(),
+                    value: _tensionIndex >= 0 ? _tensionIndex.toDouble() : 0.0,
                     min: 0,
                     max: (_tensionOptions.length - 1).toDouble(),
                     divisions: _tensionOptions.length - 1,
-                    label: "${_tensionOptions[_tensionIndex]} lbs",
+                    label: _tensionIndex >= 0 ? "${_tensionOptions[_tensionIndex]} lbs" : "Select tension",
                     onChanged: _stringTypeSelected ? (value) {
                       setState(() {
                         _tensionIndex = value.round();
@@ -720,10 +782,19 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 10),
           Text(
-            "Selected: ${_tensionOptions[_tensionIndex]} lbs",
+            _tensionIndex >= 0 
+                ? "Selected: ${_tensionOptions[_tensionIndex]} lbs"
+                : _stringTypeSelected 
+                    ? "Please select a tension"
+                    : "Select string type first",
             style: TextStyle(
               fontSize: 18,
-              color: _stringTypeSelected ? Colors.black : Colors.grey,
+              color: _tensionIndex >= 0 
+                  ? Colors.black 
+                  : _stringTypeSelected 
+                      ? Colors.orange 
+                      : Colors.grey,
+              fontWeight: _tensionIndex < 0 ? FontWeight.bold : FontWeight.normal,
             ),
             textAlign: TextAlign.center,
           ),
@@ -761,6 +832,9 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                     _selectedPaymentMethod = "Zelle";
                     _request.paymentMethod = _selectedPaymentMethod!;
                   });
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    _nextStep();
+                  });
                 },
                 child: const Text("Zelle"),
               ),
@@ -770,17 +844,13 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                     _selectedPaymentMethod = "Cash";
                     _request.paymentMethod = _selectedPaymentMethod!;
                   });
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    _nextStep();
+                  });
                 },
                 child: const Text("Cash"),
               ),
             ],
-          ),
-          const SizedBox(height: 30),
-          Center(
-            child: ElevatedButton(
-              onPressed: _isStepComplete(2) ? _nextStep : null,
-              child: const Text("Continue"),
-            ),
           ),
         ],
       ),
@@ -846,9 +916,9 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 20),
           Text("Racket: ${_racketController.text}"),
-          Text("Racket Color: ${_request.racketColor}"),
+          Text("Racket Colors: ${_selectedRacketColors.join(', ')}"),
           Text("Grip Color: ${_request.gripColor}"),
-          Text("Tension: ${_request.tension} lbs"),
+          Text("Tension: ${_selectedTension ?? 'Not selected'} lbs"),
           Text("String: ${_request.stringType}"),
           Text("Payment Method: ${_request.paymentMethod}"),
           if (_request.additionalQuestions.isNotEmpty) ...[
@@ -856,14 +926,30 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             const Text("Additional Questions/Concerns:", style: TextStyle(fontWeight: FontWeight.bold)),
             Text(_request.additionalQuestions),
           ],
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
           const Text(
-            "Terms & Conditions:",
+            "By submitting my racket for stringing, I acknowledge and agree to the following:",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 10),
           const Text(
-            "By submitting this stringing request, you agree to our service policies and terms. "
-            "Please ensure all information above is correct before submitting.",
+            "1. I confirm that my racket is not severely cracked, damaged, or in otherwise compromised condition at the time of drop-off.",
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "2. I acknowledge that stringing at higher tensions increases the risk of frame damage and reduces string durability.",
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "3. I accept that the stringer is not responsible for any racket breakage that may occur during or after stringing.",
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "4. I understand that natural wear, tension loss, or string breakage are normal occurrences with use and are not the responsibility of the stringer.",
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "5. I understand that all services are final, and no refunds will be issued once the racket has been strung to the customer's specifications.",
           ),
           Row(
             children: [
@@ -990,10 +1076,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
 
       final requestData = {
         'racket': _racketController.text,
-        'racketColor': _request.racketColor,
+        'racketColors': _request.racketColors,
         'gripColor': _request.gripColor,
         'stringType': _request.stringType,
-        'tension': _request.tension,
+        'tension': _selectedTension ?? 0,
         'paymentMethod': _request.paymentMethod,
         'additionalInfo': _request.additionalQuestions,
         'paid': false,

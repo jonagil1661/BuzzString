@@ -16,11 +16,21 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> {
       final userCredential = await _authService.signInWithGoogle();
       
       if (userCredential?.user != null) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/home',
-          (route) => false,
-        );
+        final userEmail = userCredential!.user!.email;
+        
+        if (userEmail == 'jona.gil1661@gmail.com') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/stringer',
+            (route) => false,
+          );
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(

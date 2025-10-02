@@ -87,7 +87,6 @@ class _TrackingPageState extends State<TrackingPage> {
           .collection('users')
           .doc(userId)
           .collection('stringingRequests')
-          .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -101,6 +100,15 @@ class _TrackingPageState extends State<TrackingPage> {
         }
 
         final requests = snapshot.data?.docs ?? [];
+        
+        requests.sort((a, b) {
+          final aTime = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+          final bTime = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+          if (aTime == null && bTime == null) return 0;
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime);
+        });
 
         if (requests.isEmpty) {
           return const Center(
@@ -153,7 +161,6 @@ class _TrackingPageState extends State<TrackingPage> {
                   children: [
                     Text('String: ${data['stringType'] ?? 'Unknown'}'),
                     Text('Submitted: $dateStr'),
-                    Text('ID: ${requestId.substring(0, 8)}...'),
                   ],
                 ),
                 trailing: Icon(
@@ -335,7 +342,7 @@ class _TrackingPageState extends State<TrackingPage> {
       case 'Not received':
         progressValue = 0.0;
         stageName = 'Not received';
-        description = 'Your stringing request has been submitted and is waiting to be received.';
+        description = 'Your stringing request has been submitted and is waiting for the racket to be received.';
         break;
       case 'Received':
         progressValue = 0.25;

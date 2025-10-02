@@ -51,7 +51,12 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 30),
               ],
               const Text(
-                'Professional badminton racket stringing service',
+                'Stringing service is typically completed within 2 days of drop-off (up to 5 days when busy). Rackets may be dropped off or picked up during club times. If you are unavailable for all club days, please note that in the last free response section.',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const Text(
+                'Contact Jonathan at 770-595-7773 if you have any questions. ',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
@@ -98,30 +103,6 @@ class HomePage extends StatelessWidget {
                   icon: const Icon(Icons.track_changes),
                   label: const Text(
                     'Track My Stringing',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Order history feature coming soon!'),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.history),
-                  label: const Text(
-                    'View Order History',
                     style: TextStyle(fontSize: 18),
                   ),
                   style: OutlinedButton.styleFrom(
