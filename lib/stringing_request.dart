@@ -8,7 +8,9 @@ class StringingRequest {
   int tension;
   String stringType;
   String gripColor;
+  String racketColor;
   String paymentMethod;
+  String additionalQuestions;
 
   StringingRequest({
     this.brand = '',
@@ -17,8 +19,10 @@ class StringingRequest {
     this.weightClass = '4U',
     this.tension = 24,
     this.stringType = '',
-    this.gripColor = 'White',
+    this.gripColor = '',
+    this.racketColor = '',
     this.paymentMethod = '',
+    this.additionalQuestions = '',
   });
 
   void reset() {
@@ -28,7 +32,9 @@ class StringingRequest {
     weightClass = '';
     tension = 24;
     stringType = '';
-    gripColor = 'Blue';
+    gripColor = '';
+    racketColor = '';
     paymentMethod = '';
+    additionalQuestions = '';
   }
 }
