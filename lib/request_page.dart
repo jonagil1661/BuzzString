@@ -68,12 +68,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           .map((line) => line.trim())
           .toList();
       
-      print('Loaded ${rackets.length} rackets from rackets.txt');
       setState(() {
         _availableRackets = rackets;
       });
     } catch (e) {
-      print('Error loading rackets.txt: $e');
       setState(() {
         _availableRackets = [
           "Yonex Arcsaber 11 Pro",
@@ -105,8 +103,16 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     if (text.isEmpty) {
       setState(() {
         _racketRecommendations = [];
+        _racketInfoEntered = false;
       });
       return;
+    }
+
+    if (_racketInfoEntered && _selectedRacketInfo != null && 
+        _selectedRacketInfo!.toLowerCase().trim() != text) {
+      setState(() {
+        _racketInfoEntered = false;
+      });
     }
 
     final inputWords = text.split(' ').where((word) => word.isNotEmpty).toList();
@@ -188,6 +194,14 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     return _currentStep > 0;
   }
 
+  bool _isStringTensionEnabled() {
+    if (!_stringTypeSelected) return false;
+    if (_selectedString == "I have my own string\n(\$18)" && _showCustomStringInput) {
+      return _customStringController.text.isNotEmpty;
+    }
+    return true;
+  }
+
   void _nextStep() {
     if (_canNavigateToNext()) {
       setState(() {
@@ -247,7 +261,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text("I Need Stringing")),
+      backgroundColor: const Color(0xFF003057),
+      appBar: AppBar(
+        title: const Text("I Need Stringing"),
+        backgroundColor: const Color(0xFF003057),
+        foregroundColor: Colors.white,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -270,72 +289,122 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+            const Text(
             "Racket Information",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 20),
-          const Text(
+            const Text(
             "Enter your racket information in the format: [Brand] [Series] [Model]",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
           const SizedBox(height: 10),
-          const Text(
+            const Text(
             "Example: Yonex Arcsaber 11 Pro",
-            style: TextStyle(fontSize: 14, color: Colors.blue, fontStyle: FontStyle.italic),
+            style: TextStyle(fontSize: 14, color: Colors.white70, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 30),
-          TextField(
+          TextFormField(
             controller: _racketController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "Racket Information",
               hintText: "Type your racket name...",
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.sports_tennis),
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.sports_tennis, color: Colors.white),
+              filled: true,
+              fillColor: const Color(0xFF003057),
+              labelStyle: const TextStyle(color: Colors.white70),
+              hintStyle: const TextStyle(color: Colors.white70),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFB3A369), width: 2),
+              ),
             ),
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 16, color: Colors.white),
+            maxLines: null,
+            minLines: 1,
+            textInputAction: TextInputAction.newline,
+            keyboardType: TextInputType.multiline,
           ),
           if (_racketRecommendations.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            const Text(
-              "Recommendations:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            ..._racketRecommendations.map((recommendation) => 
-              Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.recommend),
-                  title: Text(recommendation),
-                  onTap: () => _selectRacketRecommendation(recommendation),
-                ),
-              ),
-            ),
-          ],
-          if (_racketInfoEntered) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                border: Border.all(color: Colors.green.shade200),
+                color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green.shade600),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "Racket info entered: ${_racketController.text}",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
+                  const Text(
+                    "💡 Suggestions:",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
+                  const SizedBox(height: 8),
+                  ..._racketRecommendations.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final recommendation = entry.value;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _selectRacketRecommendation(recommendation),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFB3A369),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    recommendation,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ],
               ),
             ),
@@ -349,7 +418,11 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                   _selectedRacketInfo = _racketController.text;
                 });
               } : null,
-              child: Text(_racketInfoEntered ? "Confirm Racket Info" : "Continue"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB3A369),
+                foregroundColor: Colors.white,
+              ),
+              child: Text(_racketInfoEntered ? "Confirmed" : "Confirm"),
             ),
           ),
           const SizedBox(height: 40),
@@ -358,7 +431,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(
               fontSize: 24, 
               fontWeight: FontWeight.bold,
-              color: _racketInfoEntered ? Colors.black : Colors.grey,
+              color: _racketInfoEntered ? Colors.white : Colors.white70,
             ),
           ),
           const SizedBox(height: 20),
@@ -368,7 +441,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                 : "Please enter racket information first",
             style: TextStyle(
               fontSize: 16, 
-              color: _racketInfoEntered ? Colors.grey : Colors.orange,
+              color: _racketInfoEntered ? Colors.white70 : Colors.orange,
               fontWeight: _racketInfoEntered ? FontWeight.normal : FontWeight.bold,
             ),
           ),
@@ -404,8 +477,8 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(
               fontSize: 18,
               color: _racketInfoEntered ? 
-                  (_selectedRacketColors.isNotEmpty ? Colors.black : Colors.orange) 
-                  : Colors.grey,
+                  (_selectedRacketColors.isNotEmpty ? Colors.white : Colors.orange) 
+                  : Colors.white70,
               fontWeight: _selectedRacketColors.isEmpty ? FontWeight.bold : FontWeight.normal,
             ),
             textAlign: TextAlign.center,
@@ -416,7 +489,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(
               fontSize: 24, 
               fontWeight: FontWeight.bold,
-              color: (_racketInfoEntered && _selectedRacketColors.isNotEmpty) ? Colors.black : Colors.grey,
+              color: (_racketInfoEntered && _selectedRacketColors.isNotEmpty) ? Colors.white : Colors.white70,
             ),
           ),
           const SizedBox(height: 20),
@@ -432,7 +505,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                   ? Colors.orange
                   : _selectedRacketColors.isEmpty 
                       ? Colors.orange
-                      : Colors.grey,
+                      : Colors.white70,
               fontWeight: (!_racketInfoEntered || _selectedRacketColors.isEmpty) 
                   ? FontWeight.bold 
                   : FontWeight.normal,
@@ -463,10 +536,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(
               fontSize: 18,
               color: _request.gripColor.isNotEmpty 
-                  ? Colors.black
+                  ? Colors.white
                   : (_racketInfoEntered && _selectedRacketColors.isNotEmpty)
                       ? Colors.orange
-                      : Colors.grey,
+                      : Colors.white70,
               fontWeight: _request.gripColor.isEmpty ? FontWeight.bold : FontWeight.normal,
             ),
             textAlign: TextAlign.center,
@@ -475,6 +548,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           Center(
             child: ElevatedButton(
               onPressed: _isStepComplete(0) ? _nextStep : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB3A369),
+                foregroundColor: Colors.white,
+              ),
               child: const Text("Continue"),
             ),
           ),
@@ -598,12 +675,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         children: [
           const Text(
             "String Type",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 20),
           const Text(
             "Select the type of string for your racket:",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
           const SizedBox(height: 20),
           Wrap(
@@ -631,12 +708,13 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                   height: 180,
                   decoration: BoxDecoration(
                     border: isSelected
-                        ? Border.all(color: Colors.blue, width: 3)
-                        : null,
+                        ? Border.all(color: Colors.white, width: 3)
+                        : Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Card(
                     elevation: isSelected ? 6 : 3,
+                    color: const Color(0xFFB3A369),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -646,13 +724,14 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                         if (imagePath.isNotEmpty)
                           Image.asset(imagePath, height: 80)
                         else
-                          const Icon(Icons.sports_tennis, size: 50, color: Colors.blue),
+                          const Icon(Icons.sports_tennis, size: 50, color: Colors.white),
                         const SizedBox(height: 8),
                         Text(
                           str, 
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -662,54 +741,50 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
               );
             }).toList(),
           ),
-          if (_stringTypeSelected) ...[
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                border: Border.all(color: Colors.green.shade200),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green.shade600),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      "String type selected: $_selectedString",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           if (_showCustomStringInput) ...[
             const SizedBox(height: 20),
             const Text(
-              "Please specify what string you have:",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              "Please specify what string you have: *",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 10),
           const Text(
             "Example: Yonex Nanogy 98",
-            style: TextStyle(fontSize: 14, color: Colors.blue, fontStyle: FontStyle.italic),
+            style: TextStyle(fontSize: 14, color: Colors.white70, fontStyle: FontStyle.italic),
           ),
             const SizedBox(height: 10),
-            TextField(
+            TextFormField(
               controller: _customStringController,
-              decoration: const InputDecoration(
-                labelText: "Custom String Type",
+              decoration: InputDecoration(
+                labelText: "Custom String Type *",
                 hintText: "Enter the string you currently have...",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.edit),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.edit, color: Colors.white),
+                filled: true,
+                fillColor: const Color(0xFF003057),
+                labelStyle: const TextStyle(color: Colors.white70),
+                hintStyle: const TextStyle(color: Colors.white70),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: _customStringController.text.isEmpty 
+                        ? Colors.orange.withOpacity(0.7) 
+                        : Colors.white.withOpacity(0.3)
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: _customStringController.text.isEmpty 
+                        ? Colors.orange 
+                        : const Color(0xFFB3A369), 
+                    width: 2
+                  ),
+                ),
               ),
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+              maxLines: null,
+              minLines: 1,
+              textInputAction: TextInputAction.newline,
+              keyboardType: TextInputType.multiline,
               onChanged: (value) {
                 setState(() {
                   if (value.isNotEmpty) {
@@ -720,6 +795,33 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                 });
               },
             ),
+            if (_showCustomStringInput && _customStringController.text.isEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Please specify your custom string type to continue",
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
           const SizedBox(height: 40),
           Text(
@@ -727,23 +829,25 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(
               fontSize: 24, 
               fontWeight: FontWeight.bold,
-              color: _stringTypeSelected ? Colors.black : Colors.grey,
+              color: _isStringTensionEnabled() ? Colors.white : Colors.white70,
             ),
           ),
           const SizedBox(height: 20),
           Text(
-            _stringTypeSelected 
+            _isStringTensionEnabled()
                 ? "Select the tension for your strings (lbs):"
-                : "Please select a string type first",
+                : _showCustomStringInput && _customStringController.text.isEmpty
+                    ? "Please specify your custom string type first"
+                    : "Please select a string type first",
             style: TextStyle(
               fontSize: 16, 
-              color: _stringTypeSelected ? Colors.grey : Colors.orange,
-              fontWeight: _stringTypeSelected ? FontWeight.normal : FontWeight.bold,
+              color: _isStringTensionEnabled() ? Colors.white70 : Colors.orange,
+              fontWeight: _isStringTensionEnabled() ? FontWeight.normal : FontWeight.bold,
             ),
           ),
           const SizedBox(height: 30),
           Opacity(
-            opacity: _stringTypeSelected ? 1.0 : 0.5,
+            opacity: _isStringTensionEnabled() ? 1.0 : 0.5,
             child: SizedBox(
               width: double.infinity,
               child: Column(
@@ -754,7 +858,9 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                     max: (_tensionOptions.length - 1).toDouble(),
                     divisions: _tensionOptions.length - 1,
                     label: _tensionIndex >= 0 ? "${_tensionOptions[_tensionIndex]} lbs" : "Select tension",
-                    onChanged: _stringTypeSelected ? (value) {
+                    activeColor: const Color(0xFFB3A369),
+                    inactiveColor: Colors.white.withOpacity(0.3),
+                    onChanged: _isStringTensionEnabled() ? (value) {
                       setState(() {
                         _tensionIndex = value.round();
                         _selectedTension = _tensionOptions[_tensionIndex];
@@ -770,7 +876,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                             "$t", 
                             style: TextStyle(
                               fontSize: 12,
-                              color: _stringTypeSelected ? Colors.black : Colors.grey,
+                              color: _isStringTensionEnabled() ? Colors.white : Colors.white70,
                             ),
                           ),
                         )
@@ -784,16 +890,18 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           Text(
             _tensionIndex >= 0 
                 ? "Selected: ${_tensionOptions[_tensionIndex]} lbs"
-                : _stringTypeSelected 
+                : _isStringTensionEnabled()
                     ? "Please select a tension"
-                    : "Select string type first",
+                    : _showCustomStringInput && _customStringController.text.isEmpty
+                        ? "Please specify your custom string type first"
+                        : "Select string type first",
             style: TextStyle(
               fontSize: 18,
               color: _tensionIndex >= 0 
-                  ? Colors.black 
-                  : _stringTypeSelected 
+                  ? Colors.white 
+                  : _isStringTensionEnabled()
                       ? Colors.orange 
-                      : Colors.grey,
+                      : Colors.white70,
               fontWeight: _tensionIndex < 0 ? FontWeight.bold : FontWeight.normal,
             ),
             textAlign: TextAlign.center,
@@ -802,6 +910,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           Center(
             child: ElevatedButton(
               onPressed: _isStepComplete(1) ? _nextStep : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB3A369),
+                foregroundColor: Colors.white,
+              ),
               child: const Text("Continue"),
             ),
           ),
@@ -820,35 +932,94 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         children: [
           const Text(
             "Select Payment Method",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 30),
-          Wrap(
-            spacing: 20,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedPaymentMethod = "Zelle";
-                    _request.paymentMethod = _selectedPaymentMethod!;
-                  });
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    _nextStep();
-                  });
-                },
-                child: const Text("Zelle"),
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedPaymentMethod = "Zelle";
+                      _request.paymentMethod = _selectedPaymentMethod!;
+                    });
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      _nextStep();
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/zelle_logo.png',
+                        height: 60,
+                        width: 60,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Zelle',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedPaymentMethod = "Cash";
-                    _request.paymentMethod = _selectedPaymentMethod!;
-                  });
-                  Future.delayed(const Duration(milliseconds: 300), () {
-                    _nextStep();
-                  });
-                },
-                child: const Text("Cash"),
+              const SizedBox(width: 30),
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedPaymentMethod = "Cash";
+                      _request.paymentMethod = _selectedPaymentMethod!;
+                    });
+                    Future.delayed(const Duration(milliseconds: 300), () {
+                      _nextStep();
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/cash_logo.png',
+                        height: 60,
+                        width: 60,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Cash',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -866,7 +1037,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         children: [
           const Text(
             "Is there anything else you would like me to know?",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
          
           const SizedBox(height: 10),
@@ -875,16 +1046,29 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(fontSize: 14, color: Colors.orange, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 30),
-          TextField(
+          TextFormField(
             controller: _additionalQuestionsController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "Additional Questions",
               hintText: "Enter any questions or requests you may have...",
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.help_outline),
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.help_outline, color: Colors.white),
+              filled: true,
+              fillColor: const Color(0xFF003057),
+              labelStyle: const TextStyle(color: Colors.white70),
+              hintStyle: const TextStyle(color: Colors.white70),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+              ),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFB3A369), width: 2),
+              ),
             ),
-            maxLines: 4,
-            style: const TextStyle(fontSize: 16),
+            maxLines: null,
+            minLines: 1,
+            style: const TextStyle(fontSize: 16, color: Colors.white),
+            textInputAction: TextInputAction.newline,
+            keyboardType: TextInputType.multiline,
             onChanged: (value) {
               setState(() {
                 _request.additionalQuestions = value;
@@ -895,6 +1079,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           Center(
             child: ElevatedButton(
               onPressed: _isStepComplete(3) ? _nextStep : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB3A369),
+                foregroundColor: Colors.white,
+              ),
               child: const Text("Continue"),
             ),
           ),
@@ -912,44 +1100,49 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         children: [
           const Text(
             "Summary",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 20),
-          Text("Racket: ${_racketController.text}"),
-          Text("Racket Colors: ${_selectedRacketColors.join(', ')}"),
-          Text("Grip Color: ${_request.gripColor}"),
-          Text("Tension: ${_selectedTension ?? 'Not selected'} lbs"),
-          Text("String: ${_request.stringType}"),
-          Text("Payment Method: ${_request.paymentMethod}"),
+          Text("Racket: ${_racketController.text}", style: const TextStyle(color: Colors.white)),
+          Text("Racket Colors: ${_selectedRacketColors.join(', ')}", style: const TextStyle(color: Colors.white)),
+          Text("Grip Color: ${_request.gripColor}", style: const TextStyle(color: Colors.white)),
+          Text("Tension: ${_selectedTension ?? 'Not selected'} lbs", style: const TextStyle(color: Colors.white)),
+          Text("String: ${_request.stringType}", style: const TextStyle(color: Colors.white)),
+          Text("Payment Method: ${_request.paymentMethod}", style: const TextStyle(color: Colors.white)),
           if (_request.additionalQuestions.isNotEmpty) ...[
             const SizedBox(height: 10),
-            const Text("Additional Questions/Concerns:", style: TextStyle(fontWeight: FontWeight.bold)),
-            Text(_request.additionalQuestions),
+            const Text("Additional Questions/Concerns:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(_request.additionalQuestions, style: const TextStyle(color: Colors.white)),
           ],
           const SizedBox(height: 10),
           const Text(
             "By submitting my racket for stringing, I acknowledge and agree to the following:",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
           const SizedBox(height: 10),
           const Text(
             "1. I confirm that my racket is not severely cracked, damaged, or in otherwise compromised condition at the time of drop-off.",
+            style: TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
             "2. I acknowledge that stringing at higher tensions increases the risk of frame damage and reduces string durability.",
+            style: TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
             "3. I accept that the stringer is not responsible for any racket breakage that may occur during or after stringing.",
+            style: TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
             "4. I understand that natural wear, tension loss, or string breakage are normal occurrences with use and are not the responsibility of the stringer.",
+            style: TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 8),
           const Text(
             "5. I understand that all services are final, and no refunds will be issued once the racket has been strung to the customer's specifications.",
+            style: TextStyle(color: Colors.white),
           ),
           Row(
             children: [
@@ -962,13 +1155,17 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                 },
               ),
               const Expanded(
-                child: Text("I acknowledge the terms and conditions"),
+                child: Text("I acknowledge the terms and conditions", style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
           Center(
             child: ElevatedButton(
               onPressed: _acknowledgeTerms ? _submitRequest : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB3A369),
+                foregroundColor: Colors.white,
+              ),
               child: const Text("Submit Stringing Request"),
             ),
           ),
@@ -997,7 +1194,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             else
               const Icon(Icons.sports_tennis, size: 50, color: Colors.blue),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 14)),
+            Text(label, style: const TextStyle(fontSize: 14, color: Colors.black)),
           ],
         ),
       ),

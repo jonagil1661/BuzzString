@@ -16,9 +16,10 @@ class _StringerHomePageState extends State<StringerHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF003057),
       appBar: AppBar(
         title: const Text('Stringer Dashboard'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF003057),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -39,7 +40,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            color: Colors.blue.shade50,
+            color: const Color(0xFF003057).withOpacity(0.3),
             child: Column(
               children: [
                 const Text(
@@ -47,7 +48,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -55,7 +56,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                   'Manage all stringing requests',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey,
+                    color: Colors.white70,
                   ),
                 ),
               ],
@@ -83,7 +84,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                   return const Center(
                     child: Text(
                       'No stringing requests found',
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                      style: TextStyle(fontSize: 18, color: Colors.white70),
                     ),
                   );
                 }
@@ -109,6 +110,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
+                      color: Colors.white.withOpacity(0.1),
                       child: InkWell(
                         onTap: () {
                           setState(() {
@@ -245,25 +247,25 @@ class _StringerHomePageState extends State<StringerHomePage> {
                                 const SizedBox(height: 12),
                                 const Divider(height: 1),
                                 const SizedBox(height: 12),
-                                Text('Colors: ${_formatColors(data['racketColors'])}', style: const TextStyle(fontSize: 12)),
+                                Text('Colors: ${_formatColors(data['racketColors'])}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
-                                Text('Grip Color: ${data['gripColor'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12)),
+                                Text('Grip Color: ${data['gripColor'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
-                                Text('String Type: ${data['stringType'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12)),
+                                Text('String Type: ${data['stringType'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
-                                Text('Tension: ${data['tension'] ?? 'Unknown'} lbs', style: const TextStyle(fontSize: 12)),
+                                Text('Tension: ${data['tension'] ?? 'Unknown'} lbs', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
-                                Text('Payment Method: ${data['paymentMethod'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12)),
+                                Text('Payment Method: ${data['paymentMethod'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 if (data['additionalInfo'] != null && data['additionalInfo'].toString().isNotEmpty) ...[
                                   const SizedBox(height: 4),
-                                  Text('Additional Info: ${data['additionalInfo']}', style: const TextStyle(fontSize: 12)),
+                                  Text('Additional Info: ${data['additionalInfo']}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 ],
                                 const SizedBox(height: 4),
                                 Text(
                                   'Submitted: ${_formatDateTime(dateTime)}',
                                   style: const TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey,
+                                    color: Colors.white70,
                                   ),
                                 ),
                                 const SizedBox(height: 12),

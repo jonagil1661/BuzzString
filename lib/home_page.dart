@@ -12,9 +12,10 @@ class HomePage extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     
     return Scaffold(
+      backgroundColor: const Color(0xFF003057),
       appBar: AppBar(
         title: const Text('Buzz String'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF003057),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -31,13 +32,14 @@ class HomePage extends StatelessWidget {
               const Icon(
                 Icons.sports_tennis,
                 size: 100,
-                color: Colors.blue,
+                color: Colors.white,
               ),
               const SizedBox(height: 20),
               Text(
                 'Welcome to Buzz String!',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -45,19 +47,21 @@ class HomePage extends StatelessWidget {
               if (user != null) ...[
                 Text(
                   'Hello, ${user.displayName ?? user.email}',
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.white,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 30),
               ],
               const Text(
                 'Stringing service is typically completed within 2 days of drop-off (up to 5 days when busy). Rackets may be dropped off or picked up during club times. If you are unavailable for all club days, please note that in the last free response section.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
               const Text(
                 'Contact Jonathan at 770-595-7773 if you have any questions. ',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: Colors.white70),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 50),
@@ -79,7 +83,7 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(fontSize: 18),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: const Color(0xFFB3A369),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -106,6 +110,8 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(fontSize: 18),
                   ),
                   style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -113,25 +119,42 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              const Card(
+              Card(
+                color: Colors.white.withOpacity(0.1),
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Our Services:',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 10),
-                      Text('• Professional racket stringing'),
-                      Text('• Multiple string types available'),
-                      Text('• Custom tension settings'),
-                      Text('• Grip color customization'),
-                      Text('• Quick turnaround time'),
+                      const SizedBox(height: 10),
+                      const Text(
+                        '• Professional racket stringing',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const Text(
+                        '• Multiple string types available',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const Text(
+                        '• Custom tension settings',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const Text(
+                        '• Grip color customization',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      const Text(
+                        '• Quick turnaround time',
+                        style: TextStyle(color: Colors.white70),
+                      ),
                     ],
                   ),
                 ),

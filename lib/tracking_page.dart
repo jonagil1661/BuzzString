@@ -19,21 +19,26 @@ class _TrackingPageState extends State<TrackingPage> {
     
     if (user == null) {
       return Scaffold(
+        backgroundColor: const Color(0xFF003057),
         appBar: AppBar(
           title: const Text('Track My Stringing'),
-          backgroundColor: Colors.blue,
+          backgroundColor: const Color(0xFF003057),
           foregroundColor: Colors.white,
         ),
         body: const Center(
-          child: Text('Please log in to track your stringing requests.'),
+          child: Text(
+            'Please log in to track your stringing requests.',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFF003057),
       appBar: AppBar(
         title: const Text('Track My Stringing'),
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF003057),
         foregroundColor: Colors.white,
       ),
       body: Row(
@@ -62,6 +67,7 @@ class _TrackingPageState extends State<TrackingPage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -95,7 +101,7 @@ class _TrackingPageState extends State<TrackingPage> {
 
         if (snapshot.hasError) {
           return Center(
-            child: Text('Error: ${snapshot.error}'),
+            child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)),
           );
         }
 
@@ -119,7 +125,7 @@ class _TrackingPageState extends State<TrackingPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey,
+                  color: Colors.white70,
                 ),
               ),
             ),
@@ -154,13 +160,14 @@ class _TrackingPageState extends State<TrackingPage> {
                   data['racket'] ?? 'Unknown Racket',
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: Colors.white,
                   ),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('String: ${data['stringType'] ?? 'Unknown'}'),
-                    Text('Submitted: $dateStr'),
+                    Text('String: ${data['stringType'] ?? 'Unknown'}', style: const TextStyle(color: Colors.white70)),
+                    Text('Submitted: $dateStr', style: const TextStyle(color: Colors.white70)),
                   ],
                 ),
                 trailing: Icon(
@@ -221,7 +228,7 @@ class _TrackingPageState extends State<TrackingPage> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 40),
@@ -259,7 +266,7 @@ class _TrackingPageState extends State<TrackingPage> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade600,
+                        color: Colors.white70,
                       ),
                     ),
                   ],
@@ -279,7 +286,7 @@ class _TrackingPageState extends State<TrackingPage> {
                 Text(
                   progressDescription,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 const SizedBox(height: 20),
                 _buildProgressSteps(progressValue),

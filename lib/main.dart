@@ -27,7 +27,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Buzz String App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFF003057),
+      ),
       initialRoute: '/login',
       routes: {
         '/login': (context) => const GoogleLoginPage(),
