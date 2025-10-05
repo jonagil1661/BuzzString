@@ -3,19 +3,6 @@
 <head>
 
 
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
@@ -31,11 +18,62 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>buzz_string</title>
+  <title>BuzzString - Badminton Stringing Service</title>
   
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <div id="loading">
+    <div style="
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: Arial, sans-serif;
+      color: #003057;
+      text-align: center;
+    ">
+      <div style="
+        width: 50px;
+        height: 50px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #B3A369;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      "></div>
+      <div>Loading BuzzString...</div>
+    </div>
+  </div>
+  
+  <script>
+    window.addEventListener('load', function(ev) {
+      _flutter.loader.load({
+        serviceWorkerSettings: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            document.getElementById('loading').remove();
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
+  
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #003057;
+      font-family: Arial, sans-serif;
+    }
+  </style>
   <script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="https://apis.google.com/js/platform.js" async defer></script>
 <script src="flutter_bootstrap.js" async></script>
