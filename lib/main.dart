@@ -8,15 +8,26 @@ import 'stringer_home_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  if (!kIsWeb) {
-    await dotenv.load(fileName: ".env");
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    if (!kIsWeb) {
+      await dotenv.load(fileName: ".env");
+    }
+
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+    runApp(const MyApp());
+  } catch (e) {
+    print('Error initializing app: $e');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Error: $e'),
+        ),
+      ),
+    ));
   }
-
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
