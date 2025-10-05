@@ -58,7 +58,7 @@ macos/Runner/GoogleService-Info.plist
 web/firebase-config.js
 
 # Firebase options (contains sensitive project configuration)
-lib/firebase_options.dart
+# lib/firebase_options.dart
 
 # Environment variables
 .env
