@@ -22,6 +22,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   bool _racketInfoEntered = false;
   
   bool _stringTypeSelected = false;
+  bool _stringTensionCompleted = false;
   final TextEditingController _customStringController = TextEditingController();
   bool _showCustomStringInput = false;
   
@@ -34,15 +35,51 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   String? _selectedPaymentMethod;
   bool _acknowledgeTerms = false;
 
+  bool _isConfirmHovered = false;
+  bool _isStringContinueHovered = false;
+  bool _isZelleHovered = false;
+  bool _isCashHovered = false;
+  bool _isAdditionalHovered = false;
+  bool _isPaymentContinueHovered = false;
+  bool _isSubmitHovered = false;
+
+  Map<String, bool> _stringHoverStates = {};
+
   final StringingRequest _request = StringingRequest();
+
+  int _getCompletedQuestions() {
+    int completed = 0;
+    
+    if (_racketInfoEntered) completed++;
+    
+    if (_selectedRacketColors.isNotEmpty) completed++;
+    
+    if (_request.gripColor.isNotEmpty) completed++;
+    
+    if (_stringTypeSelected) completed++;
+    
+    if (_stringTensionCompleted) completed++;
+    
+    if (_selectedPaymentMethod != null) completed++;
+    
+    if (_currentStep >= 4) completed++;
+    
+    if (_acknowledgeTerms) completed++;
+    
+    return completed;
+  }
+
+  int _getTotalQuestions() {
+    return 8;
+  }
 
 
   final Map<String, String> _stringImages = {
-    "BG65 Ti\nWhite\n(\$22)": "assets/images/strings/bg_65_ti_white.png",
-    "BG80\nWhite\n(\$24)": "assets/images/strings/bg_80_white.png",
-    "Exbolt 63\nYellow\n(\$25)": "assets/images/strings/exbolt_63_yellow.png",
-    "Aerobite\nWhite/Red\n(\$26)": "assets/images/strings/aerobite.png",
-    "I have my own string\n(\$18)": "",
+    "BG65 Ti\nWhite": "assets/images/strings/bg_65_ti_white.png",
+    "BG80\nWhite": "assets/images/strings/bg_80_white.png",
+    "Exbolt 63\nYellow": "assets/images/strings/exbolt_63_yellow.png",
+    "Aerobite\nWhite/Red": "assets/images/strings/aerobite.png",
+    "I have my own string": "",
   };
 
 
@@ -171,10 +208,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                _request.gripColor.isNotEmpty;
       case 1:
         if (!_stringTypeSelected) return false;
-        if (_selectedString == "I have my own string\n(\$18)" && _showCustomStringInput) {
-          return _customStringController.text.isNotEmpty;
+        if (_selectedString == "I have my own string" && _showCustomStringInput) {
+          return _customStringController.text.isNotEmpty && _tensionIndex >= 0;
         }
-        return _selectedTension != null;
+        return _tensionIndex >= 0;
       case 2:
         return _selectedPaymentMethod != null;
       case 3:
@@ -196,11 +233,50 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
 
   bool _isStringTensionEnabled() {
     if (!_stringTypeSelected) return false;
-    if (_selectedString == "I have my own string\n(\$18)" && _showCustomStringInput) {
+    if (_selectedString == "I have my own string" && _showCustomStringInput) {
       return _customStringController.text.isNotEmpty;
     }
     return true;
   }
+
+  String _extractPrice(String stringName) {
+    switch (stringName) {
+      case "BG65 Ti\nWhite":
+        return "\$22";
+      case "BG80\nWhite":
+        return "\$24";
+      case "Exbolt 63\nYellow":
+        return "\$25";
+      case "Aerobite\nWhite/Red":
+        return "\$26";
+      case "I have my own string":
+        return "\$18";
+      default:
+        return "";
+    }
+  }
+
+  int _getStringCost(String stringName) {
+    if (stringName.startsWith("Custom: ")) {
+      return 18;
+    }
+    
+    switch (stringName) {
+      case "BG65 Ti\nWhite":
+        return 22;
+      case "BG80\nWhite":
+        return 24;
+      case "Exbolt 63\nYellow":
+        return 25;
+      case "Aerobite\nWhite/Red":
+        return 26;
+      case "I have my own string":
+        return 18;
+      default:
+        return 0;
+    }
+  }
+
 
   void _nextStep() {
     if (_canNavigateToNext()) {
@@ -261,23 +337,72 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     ];
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF003057),
-      appBar: AppBar(
-        title: const Text("I Need Stringing"),
-        backgroundColor: const Color(0xFF003057),
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: steps[_currentStep],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              Color(0xFF003057),
+              Color(0xFF001A2E),
+              Color(0xFF000F1A),
+            ],
+            stops: [0.0, 0.6, 1.0],
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width > 600 
+                ? MediaQuery.of(context).size.width * 0.6
+                : MediaQuery.of(context).size.width * 0.9,
+            constraints: const BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: const Color(0xFF001A2E),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Expanded(
+                      child: Text(
+                        "Stringing Request Form",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: steps[_currentStep],
+                  ),
+                ),
+                _buildBottomSection(),
+              ],
             ),
           ),
-          _buildNavigation(),
-          _buildProgressBar(),
-        ],
+        ),
       ),
     );
   }
@@ -285,10 +410,20 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   Widget _buildRacketInfoStep() {
     return SingleChildScrollView(
       key: const ValueKey("racketInfoStep"),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             const Text(
             "Racket Information",
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
@@ -411,18 +546,26 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ],
           const SizedBox(height: 30),
           Center(
-            child: ElevatedButton(
-              onPressed: _racketController.text.isNotEmpty ? () {
-                setState(() {
-                  _racketInfoEntered = true;
-                  _selectedRacketInfo = _racketController.text;
-                });
-              } : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB3A369),
-                foregroundColor: Colors.white,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => _isConfirmHovered = true),
+              onExit: (_) => setState(() => _isConfirmHovered = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                transform: Matrix4.identity()..scale(_isConfirmHovered ? 1.05 : 1.0),
+                child: ElevatedButton(
+                  onPressed: _racketController.text.isNotEmpty ? () {
+                    setState(() {
+                      _racketInfoEntered = true;
+                      _selectedRacketInfo = _racketController.text;
+                    });
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(_racketInfoEntered ? "Confirmed" : "Confirm"),
+                ),
               ),
-              child: Text(_racketInfoEntered ? "Confirmed" : "Confirm"),
             ),
           ),
           const SizedBox(height: 40),
@@ -461,12 +604,14 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             opacity: _racketInfoEntered ? 1.0 : 0.5,
             child: _buildMultiColorPicker(
               selectedColors: _selectedRacketColors,
-              onColorsChanged: (colors) {
-                setState(() {
-                  _selectedRacketColors = colors;
-                  _request.racketColors = colors;
-                });
-              },
+              onColorsChanged: _racketInfoEntered 
+                  ? (colors) {
+                      setState(() {
+                        _selectedRacketColors = colors;
+                        _request.racketColors = colors;
+                      });
+                    }
+                  : (colors) {},
             ),
           ),
           const SizedBox(height: 20),
@@ -522,6 +667,9 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                         _request.gripColor = colorName;
                         _selectedColor = _nameToColor(colorName);
                       });
+                      Future.delayed(const Duration(milliseconds: 300), () {
+                        _nextStep();
+                      });
                     }
                   : (colorName) {},
             ),
@@ -544,20 +692,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 30),
-          Center(
-            child: ElevatedButton(
-              onPressed: _isStepComplete(0) ? _nextStep : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB3A369),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text("Continue"),
-            ),
+            ],
           ),
-        ],
-      ),
-    );
+        ),
+      );
   }
 
   Widget _buildColorPicker({required String selectedColor, required Function(String) onColorChanged}) {
@@ -660,19 +798,29 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
 
   Widget _buildStringAndTensionStep() {
     final strings = [
-      "BG65 Ti\nWhite\n(\$22)",
-      "BG80\nWhite\n(\$24)",
-      "Exbolt 63\nYellow\n(\$25)",
-      "Aerobite\nWhite/Red\n(\$26)",
-      "I have my own string\n(\$18)",
+      "BG65 Ti\nWhite",
+      "BG80\nWhite",
+      "Exbolt 63\nYellow",
+      "Aerobite\nWhite/Red",
+      "I have my own string",
     ];
 
     return SingleChildScrollView(
       key: const ValueKey("stringAndTensionStep"),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           const Text(
             "String Type",
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
@@ -690,57 +838,198 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             children: strings.map((str) {
               String imagePath = _stringImages[str] ?? "";
               final isSelected = _selectedString == str;
+              final isHovered = _stringHoverStates[str] ?? false;
+              final price = _extractPrice(str);
+              final showPrice = isHovered || isSelected;
               
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedString = str;
-                    _request.stringType = str;
-                    _stringTypeSelected = true;
-                    _showCustomStringInput = (str == "I have my own string\n(\$18)");
-                    if (!_showCustomStringInput) {
-                      _customStringController.clear();
-                    }
-                  });
-                },
-                child: Container(
-                  width: 150,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    border: isSelected
-                        ? Border.all(color: Colors.white, width: 3)
-                        : Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Card(
-                    elevation: isSelected ? 6 : 3,
-                    color: const Color(0xFFB3A369),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (imagePath.isNotEmpty)
-                          Image.asset(imagePath, height: 80)
-                        else
-                          const Icon(Icons.sports_tennis, size: 50, color: Colors.white),
-                        const SizedBox(height: 8),
-                        Text(
-                          str, 
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: Colors.white,
+              if (imagePath.isNotEmpty) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedString = str;
+                      _request.stringType = str;
+                      _stringTypeSelected = true;
+                      _showCustomStringInput = (str == "I have my own string");
+                      if (!_showCustomStringInput) {
+                        _customStringController.clear();
+                      }
+                    });
+                  },
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => _stringHoverStates[str] = true),
+                    onExit: (_) => setState(() => _stringHoverStates[str] = false),
+                    child: Container(
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        border: isSelected
+                            ? Border.all(color: Colors.white, width: 4)
+                            : Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.3),
+                            blurRadius: isSelected ? 15 : 8,
+                            spreadRadius: isSelected ? 2 : 1,
                           ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          children: [
+                            Image.asset(
+                              imagePath, 
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                            if (isHovered || isSelected)
+                              Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                color: Colors.white.withOpacity(0.3),
+                                child: Center(
+                                  child: Text(
+                                    price,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(1, 1),
+                                          blurRadius: 3,
+                                          color: Colors.black,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              );
+                );
+              }
+              else {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedString = str;
+                      _request.stringType = str;
+                      _stringTypeSelected = true;
+                      _showCustomStringInput = (str == "I have my own string");
+                      if (!_showCustomStringInput) {
+                        _customStringController.clear();
+                      }
+                    });
+                  },
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => _stringHoverStates[str] = true),
+                    onExit: (_) => setState(() => _stringHoverStates[str] = false),
+                    child: Container(
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        border: isSelected
+                            ? Border.all(color: Colors.white, width: 4)
+                            : Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isSelected ? Colors.white.withOpacity(0.5) : Colors.black.withOpacity(0.3),
+                            blurRadius: isSelected ? 15 : 8,
+                            spreadRadius: isSelected ? 2 : 1,
+                          ),
+                        ],
+                      ),
+                      child: Card(
+                        elevation: isSelected ? 6 : 3,
+                        color: showPrice 
+                            ? const Color(0xFFB3A369).withOpacity(0.3)
+                            : const Color(0xFFB3A369),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Stack(
+                          children: [
+                            if (!showPrice) ...[
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.sports_tennis, size: 60, color: Colors.white),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      "I have my own string",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            if (showPrice)
+                              Center(
+                                child: Text(
+                                  price,
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        offset: Offset(1, 1),
+                                        blurRadius: 3,
+                                        color: Colors.black,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
             }).toList(),
           ),
+          if (_stringTypeSelected) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      "Selected: ${_request.stringType.startsWith("Custom: ") ? _request.stringType.substring(8) : _request.stringType.replaceAll('\n', ' ')}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (_showCustomStringInput) ...[
             const SizedBox(height: 20),
             const Text(
@@ -790,7 +1079,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                   if (value.isNotEmpty) {
                     _request.stringType = "Custom: $value";
                   } else {
-                      _request.stringType = "I have my own string\n(\$18)";
+                      _request.stringType = "I have my own string";
                   }
                 });
               },
@@ -908,133 +1197,225 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 30),
           Center(
-            child: ElevatedButton(
-              onPressed: _isStepComplete(1) ? _nextStep : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB3A369),
-                foregroundColor: Colors.white,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => _isStringContinueHovered = true),
+              onExit: (_) => setState(() => _isStringContinueHovered = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                transform: Matrix4.identity()..scale(_isStringContinueHovered ? 1.05 : 1.0),
+                child: ElevatedButton(
+                  onPressed: _isStepComplete(1) ? () {
+                    setState(() {
+                      _stringTensionCompleted = true;
+                    });
+                    _nextStep();
+                  } : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Continue"),
+                ),
               ),
-              child: const Text("Continue"),
             ),
           ),
-        ],
-      ),
-    );
+            ],
+          ),
+        ),
+      );
   }
 
 
 
   Widget _buildPaymentStep() {
-    return Center(
+    return SingleChildScrollView(
       key: const ValueKey("paymentStep"),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
           const Text(
             "Select Payment Method",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPaymentMethod = "Zelle";
-                      _request.paymentMethod = _selectedPaymentMethod!;
-                    });
-                    Future.delayed(const Duration(milliseconds: 300), () {
-                      _nextStep();
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB3A369),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/zelle_logo.png',
-                        height: 60,
-                        width: 60,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Zelle',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+              Expanded(
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _isZelleHovered = true),
+                  onExit: (_) => setState(() => _isZelleHovered = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.identity()..scale(_isZelleHovered ? 1.05 : 1.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedPaymentMethod = "Zelle";
+                          _request.paymentMethod = _selectedPaymentMethod!;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB3A369),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                        minimumSize: Size(120, 80),
                       ),
-                    ],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/zelle_logo.png',
+                            height: 70,
+                            width: 70,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Zelle',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 30),
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedPaymentMethod = "Cash";
-                      _request.paymentMethod = _selectedPaymentMethod!;
-                    });
-                    Future.delayed(const Duration(milliseconds: 300), () {
-                      _nextStep();
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB3A369),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/cash_logo.png',
-                        height: 60,
-                        width: 60,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Cash',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+              const SizedBox(width: 20),
+              Expanded(
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _isCashHovered = true),
+                  onExit: (_) => setState(() => _isCashHovered = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.identity()..scale(_isCashHovered ? 1.05 : 1.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedPaymentMethod = "Cash";
+                          _request.paymentMethod = _selectedPaymentMethod!;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB3A369),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                        minimumSize: Size(120, 80),
                       ),
-                    ],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/cash_logo.png',
+                            height: 70,
+                            width: 70,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Cash',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
+          const SizedBox(height: 30),
+          if (_selectedPaymentMethod != null) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFB3A369).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFB3A369).withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _selectedPaymentMethod == "Zelle" 
+                          ? "Please Zelle Jonathan Gil at 770-595-7773 before pickup"
+                          : "Please pay with exact change during pickup",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 30),
+          Center(
+            child: MouseRegion(
+              onEnter: (_) => setState(() => _isPaymentContinueHovered = true),
+              onExit: (_) => setState(() => _isPaymentContinueHovered = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                transform: Matrix4.identity()..scale(_isPaymentContinueHovered ? 1.05 : 1.0),
+                child: ElevatedButton(
+                  onPressed: _isStepComplete(2) ? _nextStep : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Continue"),
+                ),
+              ),
+            ),
+          ),
+            ],
+          ),
+        ),
+      );
   }
 
   Widget _buildAdditionalQuestionsStep() {
     return SingleChildScrollView(
       key: const ValueKey("additionalQuestionsStep"),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           const Text(
             "Is there anything else you would like me to know?",
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
@@ -1077,27 +1458,46 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           ),
           const SizedBox(height: 30),
           Center(
-            child: ElevatedButton(
-              onPressed: _isStepComplete(3) ? _nextStep : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB3A369),
-                foregroundColor: Colors.white,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => _isAdditionalHovered = true),
+              onExit: (_) => setState(() => _isAdditionalHovered = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                transform: Matrix4.identity()..scale(_isAdditionalHovered ? 1.05 : 1.0),
+                child: ElevatedButton(
+                  onPressed: _isStepComplete(3) ? _nextStep : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Continue"),
+                ),
               ),
-              child: const Text("Continue"),
             ),
           ),
-        ],
-      ),
-    );
+            ],
+          ),
+        ),
+      );
   }
 
   Widget _buildSummaryStep() {
     return SingleChildScrollView(
       key: const ValueKey("summaryStep"),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           const Text(
             "Summary",
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
@@ -1107,14 +1507,15 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
           Text("Racket Colors: ${_selectedRacketColors.join(', ')}", style: const TextStyle(color: Colors.white)),
           Text("Grip Color: ${_request.gripColor}", style: const TextStyle(color: Colors.white)),
           Text("Tension: ${_selectedTension ?? 'Not selected'} lbs", style: const TextStyle(color: Colors.white)),
-          Text("String: ${_request.stringType}", style: const TextStyle(color: Colors.white)),
+          Text("String: ${_request.stringType.replaceAll('\n', ' ')}", style: const TextStyle(color: Colors.white)),
+          Text("Cost: \$${_getStringCost(_request.stringType)}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           Text("Payment Method: ${_request.paymentMethod}", style: const TextStyle(color: Colors.white)),
           if (_request.additionalQuestions.isNotEmpty) ...[
             const SizedBox(height: 10),
             const Text("Additional Questions/Concerns:", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             Text(_request.additionalQuestions, style: const TextStyle(color: Colors.white)),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 30),
           const Text(
             "By submitting my racket for stringing, I acknowledge and agree to the following:",
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
@@ -1148,6 +1549,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             children: [
               Checkbox(
                 value: _acknowledgeTerms,
+                activeColor: const Color(0xFFB3A369),
                 onChanged: (value) {
                   setState(() {
                     _acknowledgeTerms = value!;
@@ -1159,20 +1561,32 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
               ),
             ],
           ),
+          const SizedBox(height: 30),
           Center(
-            child: ElevatedButton(
-              onPressed: _acknowledgeTerms ? _submitRequest : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB3A369),
-                foregroundColor: Colors.white,
+            child: MouseRegion(
+              onEnter: (_) => setState(() => _isSubmitHovered = true),
+              onExit: (_) => setState(() => _isSubmitHovered = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                transform: Matrix4.identity()..scale(_isSubmitHovered ? 1.05 : 1.0),
+                child: ElevatedButton(
+                  onPressed: _acknowledgeTerms ? _submitRequest : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB3A369),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  child: const Text("Submit Stringing Request"),
+                ),
               ),
-              child: const Text("Submit Stringing Request"),
             ),
           ),
           const SizedBox(height: 50),
-        ],
-      ),
-    );
+            ],
+          ),
+        ),
+      );
   }
 
   Widget _buildSelectionCard({
@@ -1201,25 +1615,55 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  Widget _buildNavigation() {
-    return Padding(
+  Widget _buildBottomSection() {
+    return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (_currentStep > 0)
             IconButton(
-              icon: const Icon(Icons.arrow_back, size: 32),
+              icon: Icon(
+                Icons.arrow_back, 
+                size: 32,
+                color: _canNavigateToPrev() ? const Color(0xFFB3A369) : Colors.grey.shade600,
+              ),
               onPressed: _canNavigateToPrev() ? _prevStep : null,
             )
           else
             const SizedBox(width: 48),
+          
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${(_getCompletedQuestions() / _getTotalQuestions() * 100).round()}% Complete',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  LinearProgressIndicator(
+                    value: _getCompletedQuestions() / _getTotalQuestions(),
+                    backgroundColor: Colors.grey[300],
+                    color: Colors.blue,
+                    minHeight: 8,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
           if (_currentStep < _totalSteps - 1)
             IconButton(
               icon: Icon(
                 Icons.arrow_forward, 
                 size: 32,
-                color: _canNavigateToNext() ? null : Colors.grey,
+                color: _canNavigateToNext() ? const Color(0xFFB3A369) : Colors.grey.shade600,
               ),
               onPressed: _canNavigateToNext() ? _nextStep : null,
             )
@@ -1230,17 +1674,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     );
   }
 
-  Widget _buildProgressBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: LinearProgressIndicator(
-        value: (_currentStep + 1) / _totalSteps,
-        backgroundColor: Colors.grey[300],
-        color: Colors.blue,
-        minHeight: 8,
-      ),
-    );
-  }
 
   Future<void> _submitRequest() async {
     try {
@@ -1279,6 +1712,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         'tension': _selectedTension ?? 0,
         'paymentMethod': _request.paymentMethod,
         'additionalInfo': _request.additionalQuestions,
+        'cost': _getStringCost(_request.stringType),
         'paid': false,
         'progress': 'Not received',
         'timestamp': FieldValue.serverTimestamp(),

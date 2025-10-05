@@ -16,54 +16,81 @@ class _StringerHomePageState extends State<StringerHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF003057),
-      appBar: AppBar(
-        title: const Text('Stringer Dashboard'),
-        backgroundColor: const Color(0xFF003057),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AuthService().signOut();
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
-              );
-            },
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              Color(0xFF003057),
+              Color(0xFF001A2E),
+              Color(0xFF000F1A),
+            ],
+            stops: [0.0, 0.6, 1.0],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            color: const Color(0xFF003057).withOpacity(0.3),
-            child: Column(
-              children: [
-                const Text(
-                  'Stringer Dashboard',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Manage all stringing requests',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
+        ),
+        child: Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width > 600 
+                ? MediaQuery.of(context).size.width * 0.6
+                : MediaQuery.of(context).size.width * 0.9,
+            constraints: const BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: const Color(0xFF001A2E),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+            clipBehavior: Clip.antiAlias,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const SizedBox(width: 48),
+                        const Expanded(
+                          child: Text(
+                            "Stringer Dashboard",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.logout, color: Colors.white),
+                          onPressed: () async {
+                            await AuthService().signOut();
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/login',
+                              (route) => false,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Manage all stringing requests',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collectionGroup('stringingRequests')
                   .snapshots(),
@@ -98,11 +125,8 @@ class _StringerHomePageState extends State<StringerHomePage> {
                   return bTime.compareTo(aTime);
                 });
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) {
-                    final request = requests[index];
+                return Column(
+                  children: requests.map((request) {
                     final data = request.data() as Map<String, dynamic>;
                     final timestamp = data['timestamp'] as Timestamp?;
                     final dateTime = timestamp?.toDate();
@@ -204,23 +228,34 @@ class _StringerHomePageState extends State<StringerHomePage> {
                                   ),
                                   Column(
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getProgressColor(data['progress'] ?? 'Not received'),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          data['progress'] ?? 'Not received',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _getProgressColor(data['progress'] ?? 'Not received'),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              data['progress'] ?? 'Not received',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                            onPressed: () => _showDeleteDialog(request.reference.parent.parent!.id, request.id),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(height: 4),
                                       Container(
@@ -253,7 +288,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                                 const SizedBox(height: 4),
                                 Text('Grip Color: ${data['gripColor'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
-                                Text('String Type: ${data['stringType'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                Text('String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
                                 Text('Tension: ${data['tension'] ?? 'Unknown'} lbs', style: const TextStyle(fontSize: 12, color: Colors.white)),
                                 const SizedBox(height: 4),
@@ -313,12 +348,16 @@ class _StringerHomePageState extends State<StringerHomePage> {
                         ),
                       ),
                     );
-                  },
+                  }).toList(),
                 );
               },
             ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -388,6 +427,73 @@ class _StringerHomePageState extends State<StringerHomePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating status: $e')),
+        );
+      }
+    }
+  }
+
+  void _showDeleteDialog(String userId, String requestId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF001A2E),
+          title: const Text(
+            'Delete Request',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Are you sure you want to delete this stringing request? This action cannot be undone.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteRequest(userId, requestId);
+              },
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteRequest(String userId, String requestId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('stringingRequests')
+          .doc(requestId)
+          .delete();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Request deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting request: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

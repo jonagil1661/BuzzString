@@ -4,116 +4,160 @@ import 'auth_service.dart';
 import 'request_page.dart';
 import 'tracking_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _isRequestHovered = false;
+  bool _isTrackHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF003057),
-      appBar: AppBar(
-        title: const Text('Buzz String'),
-        backgroundColor: const Color(0xFF003057),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _signOut(context),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              Color(0xFF003057),
+              Color(0xFF001A2E),
+              Color(0xFF000F1A),
+            ],
+            stops: [0.0, 0.6, 1.0],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
-          child: Column(
-            children: [
-              const Icon(
-                Icons.sports_tennis,
-                size: 100,
-                color: Colors.white,
+        ),
+        child: Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width > 600 
+                ? MediaQuery.of(context).size.width * 0.6
+                : MediaQuery.of(context).size.width * 0.9,
+            constraints: const BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: const Color(0xFF001A2E),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        const SizedBox(width: 48),
+                        const Expanded(
+                          child: Text(
+                            "BuzzString",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.logout, color: Colors.white),
+                          onPressed: () => _signOut(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Image.asset(
+                'assets/images/buzz_string_logo.png',
+                height: 150,
+                width: 150,
               ),
               const SizedBox(height: 20),
               Text(
-                'Welcome to Buzz String!',
+                'Hello, ${user?.displayName ?? user?.email ?? 'user'}!',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 10),
-              if (user != null) ...[
-                Text(
-                  'Hello, ${user.displayName ?? user.email}',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-              ],
-              const Text(
-                'Stringing service is typically completed within 2 days of drop-off (up to 5 days when busy). Rackets may be dropped off or picked up during club times. If you are unavailable for all club days, please note that in the last free response section.',
-                style: TextStyle(fontSize: 16, color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
-              const Text(
-                'Contact Jonathan at 770-595-7773 if you have any questions. ',
-                style: TextStyle(fontSize: 16, color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 50),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const StringingRequestPage(),
+              const SizedBox(height: 15),
+              const SizedBox(height: 25),
+              Center(
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _isRequestHovered = true),
+                  onExit: (_) => setState(() => _isRequestHovered = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.identity()..scale(_isRequestHovered ? 1.05 : 1.0),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StringingRequestPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text(
+                        'Request Stringing Service',
+                        style: TextStyle(fontSize: 18),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text(
-                    'Request Stringing Service',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB3A369),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB3A369),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TrackingPage(),
+              Center(
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _isTrackHovered = true),
+                  onExit: (_) => setState(() => _isTrackHovered = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.identity()..scale(_isTrackHovered ? 1.05 : 1.0),
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TrackingPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.track_changes),
+                      label: const Text(
+                        'Track My Stringing',
+                        style: TextStyle(fontSize: 18),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.track_changes),
-                  label: const Text(
-                    'Track My Stringing',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
                     ),
                   ),
                 ),
@@ -126,40 +170,50 @@ class HomePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Our Services:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      const Center(
+                        child: Text(
+                          'Services:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        '• Professional racket stringing',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      const Text(
-                        '• Multiple string types available',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      const Text(
-                        '• Custom tension settings',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      const Text(
-                        '• Grip color customization',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      const Text(
-                        '• Quick turnaround time',
-                        style: TextStyle(color: Colors.white70),
+                      Center(
+                        child: SizedBox(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '• Stringing service is typically completed by the next club time',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              const Text(
+                                '• Rackets may be dropped off or picked up during club times',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              const Text(
+                                '• Track your stringing service in real-time',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              const Text(
+                                '• Contact Jonathan at 770-595-7773 for additional questions',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

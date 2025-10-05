@@ -35,54 +35,74 @@ class _TrackingPageState extends State<TrackingPage> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF003057),
-      appBar: AppBar(
-        title: const Text('Track My Stringing'),
-        backgroundColor: const Color(0xFF003057),
-        foregroundColor: Colors.white,
-      ),
-      body: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  right: BorderSide(color: Colors.grey.shade300),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.center,
+            radius: 1.2,
+            colors: [
+              Color(0xFF003057),
+              Color(0xFF001A2E),
+              Color(0xFF000F1A),
+            ],
+            stops: [0.0, 0.6, 1.0],
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: MediaQuery.of(context).size.width > 600 
+                ? MediaQuery.of(context).size.width * 0.6
+                : MediaQuery.of(context).size.width * 0.9,
+            constraints: const BoxConstraints(maxWidth: 600),
+            decoration: BoxDecoration(
+              color: const Color(0xFF001A2E),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade300),
-                      ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            "Track My Stringing",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
                     ),
-                    child: const Text(
-                      'My Stringing Requests',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildRequestsList(user.uid),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    _buildProgressDisplay(),
+                    const SizedBox(height: 20),
+                    _buildRequestsList(user.uid),
+                  ],
+                ),
               ),
             ),
           ),
-          Expanded(
-            flex: 1,
-            child: _buildProgressDisplay(),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -132,57 +152,85 @@ class _TrackingPageState extends State<TrackingPage> {
           );
         }
 
-        return ListView.builder(
-          itemCount: requests.length,
-          itemBuilder: (context, index) {
-            final request = requests[index];
-            final data = request.data() as Map<String, dynamic>;
-            final requestId = request.id;
-            final isSelected = _selectedRequestId == requestId;
-
-            final timestamp = data['timestamp'] as Timestamp?;
-            final date = timestamp?.toDate();
-            final dateStr = date != null 
-                ? '${date.month}/${date.day}/${date.year}'
-                : 'Unknown date';
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.shade50 : null,
-                border: isSelected 
-                    ? Border.all(color: Colors.blue, width: 2)
-                    : null,
-                borderRadius: BorderRadius.circular(8),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                'My Stringing Requests',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              child: ListTile(
-                title: Text(
-                  data['racket'] ?? 'Unknown Racket',
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: Colors.white,
+            ),
+            const SizedBox(height: 10),
+            ...requests.map((request) {
+              final data = request.data() as Map<String, dynamic>;
+              final requestId = request.id;
+              final isSelected = _selectedRequestId == requestId;
+
+              final timestamp = data['timestamp'] as Timestamp?;
+              final date = timestamp?.toDate();
+              final dateStr = date != null 
+                  ? '${date.month}/${date.day}/${date.year}'
+                  : 'Unknown date';
+
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFB3A369).withOpacity(0.2) : Colors.transparent,
+                  border: isSelected 
+                      ? Border.all(color: const Color(0xFFB3A369), width: 2)
+                      : Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  title: Text(
+                    data['racket'] ?? 'Unknown Racket',
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: Colors.white,
+                    ),
                   ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('String: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}', style: const TextStyle(color: Colors.white70)),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            const TextSpan(
+                              text: 'Paid: ',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            TextSpan(
+                              text: (data['paidStatus'] == true) ? 'Yes' : 'No',
+                              style: TextStyle(
+                                color: (data['paidStatus'] == true) ? Colors.green : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text('Submitted: $dateStr', style: const TextStyle(color: Colors.white70)),
+                    ],
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: isSelected ? const Color(0xFFB3A369) : Colors.white70,
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _selectedRequestId = requestId;
+                      _selectedRequest = data;
+                    });
+                  },
                 ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('String: ${data['stringType'] ?? 'Unknown'}', style: const TextStyle(color: Colors.white70)),
-                    Text('Submitted: $dateStr', style: const TextStyle(color: Colors.white70)),
-                  ],
-                ),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: isSelected ? Colors.blue : Colors.grey,
-                ),
-                onTap: () {
-                  setState(() {
-                    _selectedRequestId = requestId;
-                    _selectedRequest = data;
-                  });
-                },
-              ),
-            );
-          },
+              );
+            }).toList(),
+          ],
         );
       },
     );
@@ -197,7 +245,7 @@ class _TrackingPageState extends State<TrackingPage> {
             Icon(
               Icons.sports_tennis,
               size: 80,
-              color: Colors.grey,
+              color: Colors.white70,
             ),
             SizedBox(height: 20),
             Text(
@@ -205,7 +253,7 @@ class _TrackingPageState extends State<TrackingPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey,
+                color: Colors.white70,
               ),
             ),
           ],
@@ -244,7 +292,7 @@ class _TrackingPageState extends State<TrackingPage> {
                   child: CircularProgressIndicator(
                     value: progressValue,
                     strokeWidth: 12,
-                    backgroundColor: Colors.grey.shade300,
+                    backgroundColor: Colors.white.withOpacity(0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getProgressColor(progressValue),
                     ),
@@ -258,6 +306,7 @@ class _TrackingPageState extends State<TrackingPage> {
                       style: const TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white70,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -278,8 +327,9 @@ class _TrackingPageState extends State<TrackingPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
             child: Column(
               children: [
@@ -318,7 +368,7 @@ class _TrackingPageState extends State<TrackingPage> {
             children: [
               Icon(
                 isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: isCompleted ? Colors.green : Colors.grey,
+                color: isCompleted ? const Color(0xFFB3A369) : Colors.white70,
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -328,7 +378,7 @@ class _TrackingPageState extends State<TrackingPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: isCompleted ? FontWeight.bold : FontWeight.normal,
-                    color: isCompleted ? Colors.green : Colors.grey.shade600,
+                    color: isCompleted ? const Color(0xFFB3A369) : Colors.white70,
                   ),
                 ),
               ),
@@ -349,27 +399,27 @@ class _TrackingPageState extends State<TrackingPage> {
       case 'Not received':
         progressValue = 0.0;
         stageName = 'Not received';
-        description = 'Your stringing request has been submitted and is waiting for the racket to be received.';
+        description = 'Waiting for the racket to be received.';
         break;
       case 'Received':
         progressValue = 0.25;
         stageName = 'Received';
-        description = 'Your racket has been received and logged into our system.';
+        description = 'Your racket has been received.';
         break;
       case 'In progress':
         progressValue = 0.5;
         stageName = 'In progress';
-        description = 'Your racket is currently being strung. Estimated completion: 1-2 days.';
+        description = 'Your racket is currently being strung.';
         break;
       case 'Ready for pickup':
         progressValue = 0.75;
         stageName = 'Ready for pickup';
-        description = 'Your racket is ready for pickup! Please contact us to arrange collection.';
+        description = 'Your racket is ready for pickup! Please pick it up at the club.';
         break;
       case 'Picked up':
         progressValue = 1.0;
         stageName = 'Picked up';
-        description = 'Your racket has been successfully picked up. Thank you for using our service!';
+        description = 'Your racket has been successfully picked up.';
         break;
       default:
         progressValue = 0.0;
