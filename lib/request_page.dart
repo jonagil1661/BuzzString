@@ -461,7 +461,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             maxLines: null,
             minLines: 1,
             textInputAction: TextInputAction.newline,
-            keyboardType: TextInputType.multiline,
+            keyboardType: TextInputType.text,
+            autofocus: false,
+            autocorrect: true,
+            enableSuggestions: true,
           ),
           if (_racketRecommendations.isNotEmpty) ...[
             const SizedBox(height: 15),
@@ -1449,7 +1452,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             minLines: 1,
             style: const TextStyle(fontSize: 16, color: Colors.white),
             textInputAction: TextInputAction.newline,
-            keyboardType: TextInputType.multiline,
+            keyboardType: TextInputType.text,
+            autofocus: false,
+            autocorrect: true,
+            enableSuggestions: true,
             onChanged: (value) {
               setState(() {
                 _request.additionalQuestions = value;
