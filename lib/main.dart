@@ -9,21 +9,39 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   try {
+    print('Starting app initialization...');
     WidgetsFlutterBinding.ensureInitialized();
+    print('WidgetsFlutterBinding initialized');
     
     if (!kIsWeb) {
       await dotenv.load(fileName: ".env");
+      print('Dotenv loaded');
     }
 
+    print('Initializing Firebase...');
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    print('Firebase initialized successfully');
 
+    print('Running MyApp...');
     runApp(const MyApp());
-  } catch (e) {
+    print('MyApp started');
+  } catch (e, stackTrace) {
     print('Error initializing app: $e');
+    print('Stack trace: $stackTrace');
     runApp(MaterialApp(
       home: Scaffold(
+        backgroundColor: Colors.red,
         body: Center(
-          child: Text('Error: $e'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Error Initializing App', style: TextStyle(fontSize: 24, color: Colors.white)),
+              const SizedBox(height: 20),
+              Text('Error: $e', style: const TextStyle(color: Colors.white)),
+              const SizedBox(height: 20),
+              const Text('Check browser console for more details', style: TextStyle(color: Colors.white70)),
+            ],
+          ),
         ),
       ),
     ));
