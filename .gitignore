@@ -46,7 +46,7 @@ app.*.map.json
 /android/app/release
 
 # Firebase sensitive files
-firebase.json
+# firebase.json
 firestore.rules
 firestore.indexes.json
 .firebaserc
