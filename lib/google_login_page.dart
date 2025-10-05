@@ -36,7 +36,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
     );
     
     _fadeAnimation = Tween<double>(
-      begin: 0.0,
+      begin: 0.3,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
@@ -44,7 +44,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
     ));
     
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
@@ -52,7 +52,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
     ));
     
     _scaleAnimation = Tween<double>(
-      begin: 0.8,
+      begin: 0.9,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _scaleController,
