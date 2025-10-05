@@ -72,11 +72,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                           icon: const Icon(Icons.logout, color: Colors.white),
                           onPressed: () async {
                             await AuthService().signOut();
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              '/login',
-                              (route) => false,
-                            );
+                            Navigator.pushReplacementNamed(context, '/');
                           },
                         ),
                       ],

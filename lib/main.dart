@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'google_login_page.dart';
 import 'home_page.dart';
@@ -60,11 +61,86 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFF003057),
       ),
-      initialRoute: '/login',
+      home: const AuthWrapper(),
       routes: {
         '/login': (context) => const GoogleLoginPage(),
-        '/home': (context) => const HomePage(),
-        '/stringer': (context) => const StringerHomePage(),
+        '/home': (context) => const ProtectedRoute(child: HomePage()),
+        '/stringer': (context) => const ProtectedRoute(child: StringerHomePage()),
+      },
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF003057),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFB3A369),
+              ),
+            ),
+          );
+        }
+        
+        if (snapshot.hasData) {
+          final user = snapshot.data!;
+          if (user.email == 'jona.gil1661@gmail.com') {
+            return const StringerHomePage();
+          } else {
+            return const HomePage();
+          }
+        } else {
+          return const GoogleLoginPage();
+        }
+      },
+    );
+  }
+}
+
+class ProtectedRoute extends StatelessWidget {
+  final Widget child;
+  
+  const ProtectedRoute({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF003057),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFB3A369),
+              ),
+            ),
+          );
+        }
+        
+        if (snapshot.hasData) {
+          return child;
+        } else {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed('/login');
+          });
+          return const Scaffold(
+            backgroundColor: Color(0xFF003057),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFB3A369),
+              ),
+            ),
+          );
+        }
       },
     );
   }

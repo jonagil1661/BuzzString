@@ -191,7 +191,7 @@ class _HomePageState extends State<HomePage> {
                                 style: TextStyle(color: Colors.white70),
                               ),
                               const Text(
-                                '• Rackets may be dropped off or picked up during club times',
+                                '• Rackets may be dropped off/picked up during club times',
                                 style: TextStyle(color: Colors.white70),
                               ),
                               const Text(
@@ -226,11 +226,7 @@ class _HomePageState extends State<HomePage> {
       await authService.signOut();
       
       if (context.mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/login',
-          (route) => false,
-        );
+        Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
       if (context.mounted) {

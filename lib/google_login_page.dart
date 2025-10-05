@@ -81,21 +81,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
       final userCredential = await _authService.signInWithGoogle();
       
       if (userCredential?.user != null) {
-        final userEmail = userCredential!.user!.email;
-        
-        if (userEmail == 'jona.gil1661@gmail.com') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/stringer',
-            (route) => false,
-          );
-        } else {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/home',
-            (route) => false,
-          );
-        }
+        Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
       ScaffoldMessenger.of(
