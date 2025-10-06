@@ -3,6 +3,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'stringing_request.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'native_text_input.dart';
 
 class StringingRequestPage extends StatefulWidget {
   const StringingRequestPage({super.key});
@@ -439,32 +440,14 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(fontSize: 14, color: Colors.white70, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 30),
-          TextFormField(
+          NativeTextInput(
+            labelText: "Racket Information",
+            hintText: "Type your racket name...",
+            prefixIcon: Icons.sports_tennis,
             controller: _racketController,
-            decoration: InputDecoration(
-              labelText: "Racket Information",
-              hintText: "Type your racket name...",
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.sports_tennis, color: Colors.white),
-              filled: true,
-              fillColor: const Color(0xFF003057),
-              labelStyle: const TextStyle(color: Colors.white70),
-              hintStyle: const TextStyle(color: Colors.white70),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFB3A369), width: 2),
-              ),
-            ),
-            style: const TextStyle(fontSize: 16, color: Colors.white),
-            maxLines: null,
-            minLines: 1,
-            textInputAction: TextInputAction.newline,
-            keyboardType: TextInputType.text,
-            autofocus: false,
-            autocorrect: true,
-            enableSuggestions: true,
+            onChanged: (value) {
+              _onRacketTextChanged();
+            },
           ),
           if (_racketRecommendations.isNotEmpty) ...[
             const SizedBox(height: 15),
@@ -1045,44 +1028,18 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(fontSize: 14, color: Colors.white70, fontStyle: FontStyle.italic),
           ),
             const SizedBox(height: 10),
-            TextFormField(
+            NativeTextInput(
+              labelText: "Custom String Type *",
+              hintText: "Enter the string you currently have...",
+              prefixIcon: Icons.edit,
               controller: _customStringController,
-              decoration: InputDecoration(
-                labelText: "Custom String Type *",
-                hintText: "Enter the string you currently have...",
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.edit, color: Colors.white),
-                filled: true,
-                fillColor: const Color(0xFF003057),
-                labelStyle: const TextStyle(color: Colors.white70),
-                hintStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: _customStringController.text.isEmpty 
-                        ? Colors.orange.withOpacity(0.7) 
-                        : Colors.white.withOpacity(0.3)
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: _customStringController.text.isEmpty 
-                        ? Colors.orange 
-                        : const Color(0xFFB3A369), 
-                    width: 2
-                  ),
-                ),
-              ),
-              style: const TextStyle(fontSize: 16, color: Colors.white),
-              maxLines: null,
-              minLines: 1,
-              textInputAction: TextInputAction.newline,
-              keyboardType: TextInputType.multiline,
+              isRequired: true,
               onChanged: (value) {
                 setState(() {
                   if (value.isNotEmpty) {
                     _request.stringType = "Custom: $value";
                   } else {
-                      _request.stringType = "I have my own string";
+                    _request.stringType = "I have my own string";
                   }
                 });
               },
@@ -1430,32 +1387,13 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             style: TextStyle(fontSize: 14, color: Colors.orange, fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 30),
-          TextFormField(
+          NativeTextInput(
+            labelText: "Additional Questions",
+            hintText: "Enter any questions or requests you may have...",
+            prefixIcon: Icons.help_outline,
             controller: _additionalQuestionsController,
-            decoration: InputDecoration(
-              labelText: "Additional Questions",
-              hintText: "Enter any questions or requests you may have...",
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.help_outline, color: Colors.white),
-              filled: true,
-              fillColor: const Color(0xFF003057),
-              labelStyle: const TextStyle(color: Colors.white70),
-              hintStyle: const TextStyle(color: Colors.white70),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFB3A369), width: 2),
-              ),
-            ),
-            maxLines: null,
+            maxLines: 3,
             minLines: 1,
-            style: const TextStyle(fontSize: 16, color: Colors.white),
-            textInputAction: TextInputAction.newline,
-            keyboardType: TextInputType.text,
-            autofocus: false,
-            autocorrect: true,
-            enableSuggestions: true,
             onChanged: (value) {
               setState(() {
                 _request.additionalQuestions = value;

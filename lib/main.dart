@@ -7,28 +7,24 @@ import 'google_login_page.dart';
 import 'home_page.dart';
 import 'stringer_home_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/services.dart';
 
 Future<void> main() async {
   try {
-    print('Starting app initialization...');
     WidgetsFlutterBinding.ensureInitialized();
-    print('WidgetsFlutterBinding initialized');
+    
+    if (kIsWeb) {
+      // Configure for mobile web
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+    }
     
     if (!kIsWeb) {
       await dotenv.load(fileName: ".env");
-      print('Dotenv loaded');
     }
 
-    print('Initializing Firebase...');
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    print('Firebase initialized successfully');
-
-    print('Running MyApp...');
     runApp(const MyApp());
-    print('MyApp started');
-  } catch (e, stackTrace) {
-    print('Error initializing app: $e');
-    print('Stack trace: $stackTrace');
+  } catch (e) {
     runApp(MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.red,
@@ -60,6 +56,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: const Color(0xFF003057),
+        textSelectionTheme: const TextSelectionThemeData(
+          selectionColor: Color(0xFFB3A369),
+          cursorColor: Color(0xFFB3A369),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFF003057),
+        ),
       ),
       home: const AuthWrapper(),
       routes: {
