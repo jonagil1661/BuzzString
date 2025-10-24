@@ -58,7 +58,6 @@ class _NativeTextInputState extends State<NativeTextInput> {
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
             onInvoke: (ActivateIntent intent) {
-              // Insert space character when space key is pressed
               final currentText = widget.controller.text;
               final selection = widget.controller.selection;
               final newText = currentText.substring(0, selection.start) + 
@@ -101,13 +100,11 @@ class _NativeTextInputState extends State<NativeTextInput> {
             maxLines: widget.maxLines,
             minLines: widget.minLines,
             onChanged: widget.onChanged,
-            // Use the most basic text input configuration
-            keyboardType: TextInputType.text,
+            keyboardType: widget.maxLines > 1 ? TextInputType.multiline : TextInputType.text,
             textInputAction: widget.maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
             enableSuggestions: false,
             autocorrect: false,
             textCapitalization: TextCapitalization.none,
-            // Remove all input formatters to allow spaces
             inputFormatters: [],
           ),
         ),

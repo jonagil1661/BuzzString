@@ -14,7 +14,6 @@ Future<void> main() async {
     WidgetsFlutterBinding.ensureInitialized();
     
     if (kIsWeb) {
-      // Configure for mobile web
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     }
     

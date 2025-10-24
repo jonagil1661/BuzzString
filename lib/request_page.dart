@@ -77,7 +77,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
 
   final Map<String, String> _stringImages = {
     "BG65 Ti\nWhite": "assets/images/strings/bg_65_ti_white.png",
+    "BG65 Ti\nPink": "assets/images/strings/bg_65_ti_pink.png",
+    "BG65 Ti\nYellow": "assets/images/strings/bg_65_ti_yellow.png",
     "BG80\nWhite": "assets/images/strings/bg_80_white.png",
+    "BG80\nYellow": "assets/images/strings/bg_80_yellow.png",
     "Exbolt 63\nYellow": "assets/images/strings/exbolt_63_yellow.png",
     "Aerobite\nWhite/Red": "assets/images/strings/aerobite.png",
     "I have my own string": "",
@@ -244,7 +247,13 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     switch (stringName) {
       case "BG65 Ti\nWhite":
         return "\$22";
+      case "BG65 Ti\nPink":
+        return "\$22";
+      case "BG65 Ti\nYellow":
+        return "\$22";
       case "BG80\nWhite":
+        return "\$24";
+      case "BG80\nYellow":
         return "\$24";
       case "Exbolt 63\nYellow":
         return "\$25";
@@ -265,7 +274,13 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     switch (stringName) {
       case "BG65 Ti\nWhite":
         return 22;
+      case "BG65 Ti\nPink":
+        return 22;
+      case "BG65 Ti\nYellow":
+        return 22;
       case "BG80\nWhite":
+        return 24;
+      case "BG80\nYellow":
         return 24;
       case "Exbolt 63\nYellow":
         return 25;
@@ -785,7 +800,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   Widget _buildStringAndTensionStep() {
     final strings = [
       "BG65 Ti\nWhite",
+      "BG65 Ti\nPink",
+      "BG65 Ti\nYellow",
       "BG80\nWhite",
+      "BG80\nYellow",
       "Exbolt 63\nYellow",
       "Aerobite\nWhite/Red",
       "I have my own string",

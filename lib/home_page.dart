@@ -210,6 +210,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+              const Center(
+                child: Text(
+                  'Version 1.2.0',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                ),
+              ),
                   ],
                 ),
               ),

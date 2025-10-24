@@ -76,7 +76,6 @@ class _HtmlTextInputState extends State<HtmlTextInput> {
         maxLines: widget.maxLines,
         minLines: widget.minLines,
         onChanged: widget.onChanged,
-        // Remove all restrictions that might interfere with mobile input
       ),
     );
   }
