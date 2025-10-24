@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_service.dart';
 import 'stringer_dashboard.dart';
 import 'update_string_types.dart';
+import 'statistics_page.dart';
 
 class StringerHomePage extends StatefulWidget {
   const StringerHomePage({super.key});
@@ -173,9 +174,10 @@ class _StringerHomePageState extends State<StringerHomePage> {
                           transform: Matrix4.identity()..scale(_isStatsHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Statistics page will be implemented soon!'),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const StatisticsPage(),
                                 ),
                               );
                             },
@@ -247,7 +249,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 1.3.0',
+                        'Version 1.4.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,

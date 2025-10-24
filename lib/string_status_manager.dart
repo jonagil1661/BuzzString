@@ -37,30 +37,49 @@ class StringStatusManager {
     try {
       final docId = _getDocumentId(stringName);
       print('Updating document: $docId with availability: $isInStock');
-      
+
       await _firestore.collection(_collectionName).doc(docId).set({
         'availability': isInStock,
         'cost': _stringCosts[stringName] ?? 20,
       }, SetOptions(merge: true));
-      
+
       print('Successfully updated document: $docId');
     } catch (e) {
       print('Error updating status: $e');
     }
   }
 
-  Future<int> getCost(String stringName) async {
+  Future<void> updateCost(String stringName, double newCost) async {
+    try {
+      final docId = _getDocumentId(stringName);
+      print('Updating document: $docId with cost: $newCost');
+
+      await _firestore.collection(_collectionName).doc(docId).set({
+        'availability': true,
+        'cost': newCost,
+      }, SetOptions(merge: true));
+
+      print('Successfully updated cost for document: $docId');
+    } catch (e) {
+      print('Error updating cost: $e');
+    }
+  }
+
+  Future<double> getCost(String stringName) async {
     try {
       final doc = await _firestore.collection(_collectionName).doc(_getDocumentId(stringName)).get();
       if (doc.exists) {
-        return doc.data()?['cost'] ?? (_stringCosts[stringName] ?? 20);
+        final cost = (doc.data()?['cost'] as num?)?.toDouble() ?? 20.0;
+        return cost;
       } else {
         await _createStringDocument(stringName);
-        return _stringCosts[stringName] ?? 20;
+        final cost = (_stringCosts[stringName] ?? 20).toDouble();
+        return cost;
       }
     } catch (e) {
       print('Error getting cost: $e');
-      return _stringCosts[stringName] ?? 20;
+      final cost = (_stringCosts[stringName] ?? 20).toDouble();
+      return cost;
     }
   }
 

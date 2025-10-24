@@ -47,6 +47,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
 
   Map<String, bool> _stringHoverStates = {};
   Map<String, bool> _stringStatus = {};
+  Map<String, double> _stringCosts = {};
 
   final StringingRequest _request = StringingRequest();
 
@@ -100,6 +101,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     _racketController.addListener(_onRacketTextChanged);
     _loadRackets();
     _loadStringStatus();
+    _loadInitialCosts();
   }
 
   void _loadStringStatus() {
@@ -110,11 +112,31 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             final stringName = _getStringNameFromDocumentId(doc.id);
             if (stringName != null && _stringImages.containsKey(stringName)) {
               _stringStatus[stringName] = doc.data()['availability'] ?? true;
+              _stringCosts[stringName] = (doc.data()['cost'] as num?)?.toDouble() ?? 20.0;
             }
           }
         });
       }
     });
+  }
+
+  Future<void> _loadInitialCosts() async {
+    final statusManager = StringStatusManager();
+    Map<String, double> tempCosts = {};
+    
+    for (String stringName in _stringImages.keys) {
+      if (!stringName.startsWith("Custom: ") && stringName != "I have my own string") {
+        tempCosts[stringName] = await statusManager.getCost(stringName);
+      } else {
+        tempCosts[stringName] = 18.0;
+      }
+    }
+    
+    if (mounted) {
+      setState(() {
+        _stringCosts = tempCosts;
+      });
+    }
   }
 
   String? _getStringNameFromDocumentId(String docId) {
@@ -278,32 +300,27 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     if (stringName == "I have my own string") {
       return "\$18";
     }
-    final cost = _getStringCost(stringName);
-    return "\$$cost";
+    if (stringName.startsWith("Custom: ")) {
+      return "\$18";
+    }
+    
+    final cost = _stringCosts[stringName];
+    if (cost != null) {
+      return "\$${cost.toStringAsFixed(0)}";
+    }
+    
+    return "\$--";
   }
 
-  int _getStringCost(String stringName) {
+  double? _getStringCost(String stringName) {
     if (stringName.startsWith("Custom: ")) {
-      return 18;
+      return 18.0;
     }
     if (stringName == "I have my own string") {
-      return 18;
+      return 18.0;
     }
-    switch (stringName) {
-      case "BG65 Ti\nWhite":
-      case "BG65 Ti\nPink":
-      case "BG65 Ti\nYellow":
-        return 22;
-      case "BG80\nWhite":
-      case "BG80\nYellow":
-        return 24;
-      case "Exbolt 63\nYellow":
-        return 25;
-      case "Aerobite\nWhite/Red":
-        return 26;
-      default:
-        return 20;
-    }
+    
+    return _stringCosts[stringName];
   }
 
 
@@ -1712,7 +1729,6 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
         'paymentMethod': _request.paymentMethod,
         'additionalInfo': _request.additionalQuestions,
         'cost': _getStringCost(_request.stringType),
-        'paid': false,
         'progress': 'Not received',
         'timestamp': FieldValue.serverTimestamp(),
       };

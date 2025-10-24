@@ -20,6 +20,8 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
   };
 
   Map<String, bool> _stringStatus = {};
+  Map<String, double> _stringCosts = {};
+  Map<String, TextEditingController> _costControllers = {};
 
   @override
   void initState() {
@@ -27,17 +29,36 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     _initializeStatus();
   }
 
+  @override
+  void dispose() {
+    for (var controller in _costControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   Future<void> _initializeStatus() async {
     final statusManager = StringStatusManager();
     Map<String, bool> tempStatus = {};
+    Map<String, double> tempCosts = {};
     
     for (String stringName in _stringImages.keys) {
       tempStatus[stringName] = await statusManager.isInStock(stringName);
+      tempCosts[stringName] = await statusManager.getCost(stringName);
+      
+      if (!_costControllers.containsKey(stringName)) {
+        _costControllers[stringName] = TextEditingController();
+      }
     }
     
     if (mounted) {
       setState(() {
         _stringStatus = tempStatus;
+        _stringCosts = tempCosts;
+        
+        for (String stringName in _stringImages.keys) {
+          _costControllers[stringName]!.text = _stringCosts[stringName]!.toStringAsFixed(0);
+        }
       });
     }
   }
@@ -58,6 +79,52 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
         setState(() {
           _stringStatus[stringName] = !isInStock;
         });
+      }
+    }
+  }
+
+  Future<void> _confirmStringCost(String stringName) async {
+    final controller = _costControllers[stringName];
+    if (controller == null) return;
+    
+    final newCost = double.tryParse(controller.text);
+    if (newCost == null || newCost <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid cost amount'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    print('Confirming string cost for $stringName to $newCost');
+    
+    setState(() {
+      _stringCosts[stringName] = newCost;
+    });
+
+    try {
+      await StringStatusManager().updateCost(stringName, newCost);
+      print('Cost updated successfully in Firestore');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cost updated to \$${newCost.toStringAsFixed(0)}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error updating cost in Firestore: $e');
+      if (mounted) {
+        setState(() {
+          _stringCosts[stringName] = _stringCosts[stringName] ?? 20.0;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error updating cost. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -184,72 +251,146 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                             color: Colors.white.withOpacity(0.1),
                             child: Padding(
                                 padding: const EdgeInsets.all(16.0),
-                                child: Row(
+                                child:                             Column(
+                              children: [
+                                Row(
                                   children: [
-                                  Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.3),
-                                        width: 1,
+                                    Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.asset(
+                                          imagePath,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey.shade300,
+                                              child: const Icon(
+                                                Icons.image_not_supported,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       ),
                                     ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.asset(
-                                        imagePath,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Container(
-                                            color: Colors.grey.shade300,
-                                            child: const Icon(
-                                              Icons.image_not_supported,
-                                              color: Colors.grey,
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            stringName,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
                                             ),
-                                          );
-                                        },
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            isInStock ? 'In Stock' : 'Out of Stock',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: isInStock ? Colors.green : Colors.red,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          stringName,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          isInStock ? 'In Stock' : 'Out of Stock',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: isInStock ? Colors.green : Colors.red,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
+                                    Switch(
+                                      value: isInStock,
+                                      onChanged: (value) {
+                                        print('Switch changed for $stringName: $value');
+                                        _updateStringStatus(stringName, value);
+                                      },
+                                      activeColor: Colors.green,
+                                      inactiveThumbColor: Colors.red,
+                                      inactiveTrackColor: Colors.red.withOpacity(0.3),
                                     ),
-                                  ),
-                                  Switch(
-                                    value: isInStock,
-                                    onChanged: (value) {
-                                      print('Switch changed for $stringName: $value');
-                                      _updateStringStatus(stringName, value);
-                                    },
-                                    activeColor: Colors.green,
-                                    inactiveThumbColor: Colors.red,
-                                    inactiveTrackColor: Colors.red.withOpacity(0.3),
-                                  ),
                                   ],
                                 ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Cost: \$',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _costControllers[stringName],
+                                        keyboardType: TextInputType.number,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: '0',
+                                          hintStyle: TextStyle(
+                                            color: Colors.white.withOpacity(0.5),
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: BorderSide(
+                                              color: Colors.white.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: BorderSide(
+                                              color: Colors.white.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                            borderSide: const BorderSide(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () => _confirmStringCost(stringName),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFB3A369),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Confirm',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                               ),
                           );
                         },
@@ -257,7 +398,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 1.2.0',
+                        'Version 1.4.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
