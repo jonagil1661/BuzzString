@@ -4,6 +4,7 @@ import 'stringing_request.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'native_text_input.dart';
+import 'string_status_manager.dart';
 
 class StringingRequestPage extends StatefulWidget {
   const StringingRequestPage({super.key});
@@ -45,6 +46,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   bool _isSubmitHovered = false;
 
   Map<String, bool> _stringHoverStates = {};
+  Map<String, bool> _stringStatus = {};
 
   final StringingRequest _request = StringingRequest();
 
@@ -97,6 +99,35 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     super.initState();
     _racketController.addListener(_onRacketTextChanged);
     _loadRackets();
+    _loadStringStatus();
+  }
+
+  void _loadStringStatus() {
+    FirebaseFirestore.instance.collection('stringAvailability').snapshots().listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          for (var doc in snapshot.docs) {
+            final stringName = _getStringNameFromDocumentId(doc.id);
+            if (stringName != null && _stringImages.containsKey(stringName)) {
+              _stringStatus[stringName] = doc.data()['availability'] ?? true;
+            }
+          }
+        });
+      }
+    });
+  }
+
+  String? _getStringNameFromDocumentId(String docId) {
+    final mapping = {
+      'bg65_ti_white': 'BG65 Ti\nWhite',
+      'bg65_ti_pink': 'BG65 Ti\nPink',
+      'bg65_ti_yellow': 'BG65 Ti\nYellow',
+      'bg80_white': 'BG80\nWhite',
+      'bg80_yellow': 'BG80\nYellow',
+      'exbolt_63_yellow': 'Exbolt 63\nYellow',
+      'aerobite_white_red': 'Aerobite\nWhite/Red',
+    };
+    return mapping[docId];
   }
 
   Future<void> _loadRackets() async {
@@ -244,52 +275,34 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   }
 
   String _extractPrice(String stringName) {
-    switch (stringName) {
-      case "BG65 Ti\nWhite":
-        return "\$22";
-      case "BG65 Ti\nPink":
-        return "\$22";
-      case "BG65 Ti\nYellow":
-        return "\$22";
-      case "BG80\nWhite":
-        return "\$24";
-      case "BG80\nYellow":
-        return "\$24";
-      case "Exbolt 63\nYellow":
-        return "\$25";
-      case "Aerobite\nWhite/Red":
-        return "\$26";
-      case "I have my own string":
-        return "\$18";
-      default:
-        return "";
+    if (stringName == "I have my own string") {
+      return "\$18";
     }
+    final cost = _getStringCost(stringName);
+    return "\$$cost";
   }
 
   int _getStringCost(String stringName) {
     if (stringName.startsWith("Custom: ")) {
       return 18;
     }
-    
+    if (stringName == "I have my own string") {
+      return 18;
+    }
     switch (stringName) {
       case "BG65 Ti\nWhite":
-        return 22;
       case "BG65 Ti\nPink":
-        return 22;
       case "BG65 Ti\nYellow":
         return 22;
       case "BG80\nWhite":
-        return 24;
       case "BG80\nYellow":
         return 24;
       case "Exbolt 63\nYellow":
         return 25;
       case "Aerobite\nWhite/Red":
         return 26;
-      case "I have my own string":
-        return 18;
       default:
-        return 0;
+        return 20;
     }
   }
 
@@ -845,10 +858,11 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
               final isHovered = _stringHoverStates[str] ?? false;
               final price = _extractPrice(str);
               final showPrice = isHovered || isSelected;
+              final isInStock = _stringStatus[str] ?? true;
               
               if (imagePath.isNotEmpty) {
                 return GestureDetector(
-                  onTap: () {
+                  onTap: isInStock ? () {
                     setState(() {
                       _selectedString = str;
                       _request.stringType = str;
@@ -858,10 +872,10 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                         _customStringController.clear();
                       }
                     });
-                  },
+                  } : null,
                   child: MouseRegion(
-                    onEnter: (_) => setState(() => _stringHoverStates[str] = true),
-                    onExit: (_) => setState(() => _stringHoverStates[str] = false),
+                    onEnter: isInStock ? (_) => setState(() => _stringHoverStates[str] = true) : null,
+                    onExit: isInStock ? (_) => setState(() => _stringHoverStates[str] = false) : null,
                     child: Container(
                       width: 160,
                       height: 160,
@@ -888,7 +902,30 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
                               height: double.infinity,
                               fit: BoxFit.cover,
                             ),
-                            if (isHovered || isSelected)
+                            if (!isInStock)
+                              Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                color: Colors.black.withOpacity(0.7),
+                                child: const Center(
+                                  child: Text(
+                                    'Out of Stock',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(1, 1),
+                                          blurRadius: 3,
+                                          color: Colors.black,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (isInStock && (isHovered || isSelected))
                               Container(
                                 width: double.infinity,
                                 height: double.infinity,
