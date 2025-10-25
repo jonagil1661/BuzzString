@@ -23,20 +23,37 @@ Future<void> main() async {
 
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     runApp(const MyApp());
-  } catch (e) {
+  } catch (e, stackTrace) {
+    if (kDebugMode) {
+      print('Error in main: $e');
+      print('Stack trace: $stackTrace');
+    }
     runApp(MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.red,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('Error Initializing App', style: TextStyle(fontSize: 24, color: Colors.white)),
-              const SizedBox(height: 20),
-              Text('Error: $e', style: const TextStyle(color: Colors.white)),
-              const SizedBox(height: 20),
-              const Text('Check browser console for more details', style: TextStyle(color: Colors.white70)),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Error Initializing App', 
+                  style: TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold)
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Error: $e', 
+                  style: const TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Check browser console for more details', 
+                  style: TextStyle(color: Colors.white70)
+                ),
+              ],
+            ),
           ),
         ),
       ),

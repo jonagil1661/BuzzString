@@ -121,21 +121,30 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
   }
 
   Future<void> _loadInitialCosts() async {
-    final statusManager = StringStatusManager();
-    Map<String, double> tempCosts = {};
-    
-    for (String stringName in _stringImages.keys) {
-      if (!stringName.startsWith("Custom: ") && stringName != "I have my own string") {
-        tempCosts[stringName] = await statusManager.getCost(stringName);
-      } else {
-        tempCosts[stringName] = 18.0;
+    try {
+      final statusManager = StringStatusManager();
+      Map<String, double> tempCosts = {};
+      
+      for (String stringName in _stringImages.keys) {
+        if (!stringName.startsWith("Custom: ") && stringName != "I have my own string") {
+          try {
+            tempCosts[stringName] = await statusManager.getCost(stringName);
+          } catch (e) {
+            print('Error loading cost for $stringName: $e');
+            tempCosts[stringName] = 20.0;
+          }
+        } else {
+          tempCosts[stringName] = 18.0;
+        }
       }
-    }
-    
-    if (mounted) {
-      setState(() {
-        _stringCosts = tempCosts;
-      });
+      
+      if (mounted) {
+        setState(() {
+          _stringCosts = tempCosts;
+        });
+      }
+    } catch (e) {
+      print('Error in _loadInitialCosts: $e');
     }
   }
 
