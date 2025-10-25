@@ -395,16 +395,6 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                           );
                         },
                     ),
-                    const SizedBox(height: 20),
-                    const Center(
-                      child: Text(
-                        'Version 1.4.0',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),

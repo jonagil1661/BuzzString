@@ -65,7 +65,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                         const SizedBox(width: 48),
                         const Expanded(
                           child: Text(
-                            "Stringer Portal",
+                            "BuzzString Stringer Portal",
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -249,7 +249,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 1.4.0',
+                        'Version 1.4.1',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
