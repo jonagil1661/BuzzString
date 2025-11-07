@@ -214,7 +214,7 @@ class _HomePageState extends State<HomePage> {
               const Center(
                 child: Text(
                   'Version 1.4.3',
-                  style: TextStyle(
+                  style: TextStyle( 
                     fontSize: 14,
                     color: Colors.white70,
                   ),
