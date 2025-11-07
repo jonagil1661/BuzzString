@@ -12,6 +12,44 @@ class StringerDashboard extends StatefulWidget {
 
 class _StringerDashboardState extends State<StringerDashboard> {
   final Set<String> _expandedRequests = <String>{};
+  final ScrollController _scrollController = ScrollController();
+  final Map<String, Map<String, dynamic>?> _userCache = {};
+  final Map<String, Future<DocumentSnapshot>> _userFutures = {};
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<Map<String, dynamic>?> _getUserData(String userId) async {
+    // Return cached data immediately if available
+    if (_userCache.containsKey(userId)) {
+      return Future.value(_userCache[userId]);
+    }
+
+    // If a future is already in progress, return it
+    if (_userFutures.containsKey(userId)) {
+      final snapshot = await _userFutures[userId]!;
+      final userData = snapshot.data() as Map<String, dynamic>?;
+      _userCache[userId] = userData;
+      _userFutures.remove(userId);
+      return userData;
+    }
+
+    // Create new future and cache it
+    final future = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .get();
+    _userFutures[userId] = future;
+
+    final snapshot = await future;
+    final userData = snapshot.data() as Map<String, dynamic>?;
+    _userCache[userId] = userData;
+    _userFutures.remove(userId);
+    return userData;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +88,7 @@ class _StringerDashboardState extends State<StringerDashboard> {
             ),
             clipBehavior: Clip.antiAlias,
             child: SingleChildScrollView(
+              controller: _scrollController,
               child: Padding(
                 padding: const EdgeInsets.all(40.0),
                 child: Column(
@@ -128,6 +167,14 @@ class _StringerDashboardState extends State<StringerDashboard> {
                           return bTime.compareTo(aTime);
                         });
 
+                        // Pre-load user data for all requests
+                        for (final request in requests) {
+                          final userId = request.reference.parent.parent!.id;
+                          if (!_userCache.containsKey(userId) && !_userFutures.containsKey(userId)) {
+                            _getUserData(userId);
+                          }
+                        }
+
                         return Column(
                           children: requests.map((request) {
                             final data = request.data() as Map<String, dynamic>;
@@ -140,11 +187,20 @@ class _StringerDashboardState extends State<StringerDashboard> {
                               color: Colors.white.withOpacity(0.1),
                               child: InkWell(
                                 onTap: () {
+                                  final currentScrollOffset = _scrollController.hasClients 
+                                      ? _scrollController.offset 
+                                      : 0.0;
                                   setState(() {
                                     if (isExpanded) {
                                       _expandedRequests.remove(request.id);
                                     } else {
                                       _expandedRequests.add(request.id);
+                                    }
+                                  });
+                                  // Restore scroll position after rebuild
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (_scrollController.hasClients) {
+                                      _scrollController.jumpTo(currentScrollOffset);
                                     }
                                   });
                                 },
@@ -169,21 +225,14 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
-                                                FutureBuilder<DocumentSnapshot>(
-                                                  future: FirebaseFirestore.instance
-                                                      .collection('users')
-                                                      .doc(request.reference.parent.parent!.id)
-                                                      .get(),
+                                                FutureBuilder<Map<String, dynamic>?>(
+                                                  future: _getUserData(request.reference.parent.parent!.id),
                                                   builder: (context, userSnapshot) {
                                                     if (userSnapshot.connectionState == ConnectionState.waiting) {
                                                       return const Text('Loading...', style: TextStyle(fontSize: 12, color: Colors.grey));
                                                     }
                                                     
-                                                    if (userSnapshot.hasError || !userSnapshot.hasData) {
-                                                      return const Text('User info unavailable', style: TextStyle(fontSize: 12, color: Colors.grey));
-                                                    }
-                                                    
-                                                    final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+                                                    final userData = userSnapshot.data;
                                                     final displayName = userData?['displayName'] as String?;
                                                     final firstName = userData?['firstName'] as String?;
                                                     final lastName = userData?['lastName'] as String?;
