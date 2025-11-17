@@ -19,6 +19,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   final Map<String, int> _costOfStringPerRacket = {
     'BG80\nWhite': 6,
     'BG80\nYellow': 6,
+    'BG80\nBlack': 6,
     'BG65 Ti\nWhite': 4,
     'BG65 Ti\nYellow': 4,
     'BG65 Ti\nPink': 4,
@@ -181,7 +182,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       ),
                       const SizedBox(height: 16),
                       _buildStatCard(
-                        'Total Money Earned',
+                        'Gross Revenue',
                         '\$${_totalMoneyEarned.toStringAsFixed(2)}',
                         Icons.attach_money,
                         Colors.green,

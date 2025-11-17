@@ -14,6 +14,7 @@ class StringStatusManager {
     "BG65 Ti\nYellow": 22,
     "BG80\nWhite": 24,
     "BG80\nYellow": 24,
+    "BG80\nBlack": 24,
     "Exbolt 63\nYellow": 25,
     "Aerobite\nWhite/Red": 26,
   };
@@ -181,6 +182,7 @@ class StringStatusManager {
       'bg65_ti_yellow': 'BG65 Ti\nYellow',
       'bg80_white': 'BG80\nWhite',
       'bg80_yellow': 'BG80\nYellow',
+      'bg80_black': 'BG80\nBlack',
       'exbolt_63_yellow': 'Exbolt 63\nYellow',
       'aerobite_white_red': 'Aerobite\nWhite/Red',
     };

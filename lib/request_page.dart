@@ -84,6 +84,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
     "BG65 Ti\nYellow": "assets/images/strings/bg_65_ti_yellow.png",
     "BG80\nWhite": "assets/images/strings/bg_80_white.png",
     "BG80\nYellow": "assets/images/strings/bg_80_yellow.png",
+    "BG80\nBlack": "assets/images/strings/bg_80_black.png",
     "Exbolt 63\nYellow": "assets/images/strings/exbolt_63_yellow.png",
     "Aerobite\nWhite/Red": "assets/images/strings/aerobite.png",
     "I have my own string": "",
@@ -155,6 +156,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
       'bg65_ti_yellow': 'BG65 Ti\nYellow',
       'bg80_white': 'BG80\nWhite',
       'bg80_yellow': 'BG80\nYellow',
+      'bg80_black': 'BG80\nBlack',
       'exbolt_63_yellow': 'Exbolt 63\nYellow',
       'aerobite_white_red': 'Aerobite\nWhite/Red',
     };
@@ -843,6 +845,7 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
       "BG65 Ti\nYellow",
       "BG80\nWhite",
       "BG80\nYellow",
+      "BG80\nBlack",
       "Exbolt 63\nYellow",
       "Aerobite\nWhite/Red",
       "I have my own string",

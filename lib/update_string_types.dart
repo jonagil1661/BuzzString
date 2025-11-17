@@ -15,6 +15,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     "BG65 Ti\nYellow": "assets/images/strings/bg_65_ti_yellow.png",
     "BG80\nWhite": "assets/images/strings/bg_80_white.png",
     "BG80\nYellow": "assets/images/strings/bg_80_yellow.png",
+    "BG80\nBlack": "assets/images/strings/bg_80_black.png",
     "Exbolt 63\nYellow": "assets/images/strings/exbolt_63_yellow.png",
     "Aerobite\nWhite/Red": "assets/images/strings/aerobite.png",
   };
