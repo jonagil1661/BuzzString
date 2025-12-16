@@ -1,6 +1,6 @@
 # buzz_string
 
-A new Flutter project.
+Badminton Stringing Request Web App
 
 ## Getting Started
 
