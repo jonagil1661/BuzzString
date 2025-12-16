@@ -249,7 +249,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 1.4.3',
+                        'Version 1.5.1',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
