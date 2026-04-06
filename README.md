@@ -1,16 +1,10 @@
-# buzz_string
+# BuzzString
 
+BuzzString is a web app for submitting and tracking badminton racket stringing requests.
 Badminton Stringing Request Web App
 
-## Getting Started
+Users can quickly submit a request for each racket, choose string types, select string tensions, and view pricing across all available string options. After a request is submitted, users can follow progress in real time through the live tracker.
 
-This project is a starting point for a Flutter application.
+BuzzString also provides active email updates, including notifications when a racket is ready for pickup.
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.

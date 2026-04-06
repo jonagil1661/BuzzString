@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_service.dart';
 
 class StringerDashboard extends StatefulWidget {
   const StringerDashboard({super.key});
@@ -12,9 +11,11 @@ class StringerDashboard extends StatefulWidget {
 
 class _StringerDashboardState extends State<StringerDashboard> {
   final Set<String> _expandedRequests = <String>{};
+  final Set<String> _sendingEmailRequestIds = <String>{};
   final ScrollController _scrollController = ScrollController();
   final Map<String, Map<String, dynamic>?> _userCache = {};
-  final Map<String, Future<DocumentSnapshot>> _userFutures = {};
+  final Map<String, Future<DocumentSnapshot<Map<String, dynamic>>>>
+      _userFutures = {};
 
   @override
   void dispose() {
@@ -31,21 +32,19 @@ class _StringerDashboardState extends State<StringerDashboard> {
     // If a future is already in progress, return it
     if (_userFutures.containsKey(userId)) {
       final snapshot = await _userFutures[userId]!;
-      final userData = snapshot.data() as Map<String, dynamic>?;
+      final userData = snapshot.data();
       _userCache[userId] = userData;
       _userFutures.remove(userId);
       return userData;
     }
 
     // Create new future and cache it
-    final future = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+    final future =
+        FirebaseFirestore.instance.collection('users').doc(userId).get();
     _userFutures[userId] = future;
 
     final snapshot = await future;
-    final userData = snapshot.data() as Map<String, dynamic>?;
+    final userData = snapshot.data();
     _userCache[userId] = userData;
     _userFutures.remove(userId);
     return userData;
@@ -71,7 +70,7 @@ class _StringerDashboardState extends State<StringerDashboard> {
         ),
         child: Center(
           child: Container(
-            width: MediaQuery.of(context).size.width > 600 
+            width: MediaQuery.of(context).size.width > 600
                 ? MediaQuery.of(context).size.width * 0.8
                 : MediaQuery.of(context).size.width * 0.95,
             constraints: const BoxConstraints(maxWidth: 800),
@@ -96,7 +95,8 @@ class _StringerDashboardState extends State<StringerDashboard> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon:
+                              const Icon(Icons.arrow_back, color: Colors.white),
                           onPressed: () => Navigator.pop(context),
                         ),
                         const Expanded(
@@ -137,8 +137,10 @@ class _StringerDashboardState extends State<StringerDashboard> {
                           .collectionGroup('stringingRequests')
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         }
 
                         if (snapshot.hasError) {
@@ -153,14 +155,19 @@ class _StringerDashboardState extends State<StringerDashboard> {
                           return const Center(
                             child: Text(
                               'No stringing requests found',
-                              style: TextStyle(fontSize: 18, color: Colors.white70),
+                              style: TextStyle(
+                                  fontSize: 18, color: Colors.white70),
                             ),
                           );
                         }
 
                         requests.sort((a, b) {
-                          final aTime = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
-                          final bTime = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+                          final aTime =
+                              (a.data() as Map<String, dynamic>)['timestamp']
+                                  as Timestamp?;
+                          final bTime =
+                              (b.data() as Map<String, dynamic>)['timestamp']
+                                  as Timestamp?;
                           if (aTime == null && bTime == null) return 0;
                           if (aTime == null) return 1;
                           if (bTime == null) return -1;
@@ -170,7 +177,8 @@ class _StringerDashboardState extends State<StringerDashboard> {
                         // Pre-load user data for all requests
                         for (final request in requests) {
                           final userId = request.reference.parent.parent!.id;
-                          if (!_userCache.containsKey(userId) && !_userFutures.containsKey(userId)) {
+                          if (!_userCache.containsKey(userId) &&
+                              !_userFutures.containsKey(userId)) {
                             _getUserData(userId);
                           }
                         }
@@ -180,16 +188,18 @@ class _StringerDashboardState extends State<StringerDashboard> {
                             final data = request.data() as Map<String, dynamic>;
                             final timestamp = data['timestamp'] as Timestamp?;
                             final dateTime = timestamp?.toDate();
-                            final isExpanded = _expandedRequests.contains(request.id);
+                            final isExpanded =
+                                _expandedRequests.contains(request.id);
 
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8),
                               color: Colors.white.withOpacity(0.1),
                               child: InkWell(
                                 onTap: () {
-                                  final currentScrollOffset = _scrollController.hasClients 
-                                      ? _scrollController.offset 
-                                      : 0.0;
+                                  final currentScrollOffset =
+                                      _scrollController.hasClients
+                                          ? _scrollController.offset
+                                          : 0.0;
                                   setState(() {
                                     if (isExpanded) {
                                       _expandedRequests.remove(request.id);
@@ -198,23 +208,28 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                     }
                                   });
                                   // Restore scroll position after rebuild
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
                                     if (_scrollController.hasClients) {
-                                      _scrollController.jumpTo(currentScrollOffset);
+                                      _scrollController
+                                          .jumpTo(currentScrollOffset);
                                     }
                                   });
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
                                                   'Request ID: ${request.id}',
@@ -225,50 +240,94 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 4),
-                                                FutureBuilder<Map<String, dynamic>?>(
-                                                  future: _getUserData(request.reference.parent.parent!.id),
-                                                  builder: (context, userSnapshot) {
-                                                    if (userSnapshot.connectionState == ConnectionState.waiting) {
-                                                      return const Text('Loading...', style: TextStyle(fontSize: 12, color: Colors.grey));
+                                                FutureBuilder<
+                                                    Map<String, dynamic>?>(
+                                                  future: _getUserData(request
+                                                      .reference
+                                                      .parent
+                                                      .parent!
+                                                      .id),
+                                                  builder:
+                                                      (context, userSnapshot) {
+                                                    if (userSnapshot
+                                                            .connectionState ==
+                                                        ConnectionState
+                                                            .waiting) {
+                                                      return const Text(
+                                                          'Loading...',
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  Colors.grey));
                                                     }
-                                                    
-                                                    final userData = userSnapshot.data;
-                                                    final displayName = userData?['displayName'] as String?;
-                                                    final firstName = userData?['firstName'] as String?;
-                                                    final lastName = userData?['lastName'] as String?;
-                                                    final email = userData?['email'] as String?;
-                                                    
-                                                    String customerName = displayName ?? 
-                                                        ((firstName != null || lastName != null) ? '${firstName ?? ''} ${lastName ?? ''}'.trim() : null) ??
-                                                        email?.split('@').first ?? 'Unknown Customer';
-                                                    
+
+                                                    final userData =
+                                                        userSnapshot.data;
+                                                    final displayName =
+                                                        userData?['displayName']
+                                                            as String?;
+                                                    final firstName =
+                                                        userData?['firstName']
+                                                            as String?;
+                                                    final lastName =
+                                                        userData?['lastName']
+                                                            as String?;
+                                                    final email =
+                                                        userData?['email']
+                                                            as String?;
+
+                                                    String customerName =
+                                                        displayName ??
+                                                            ((firstName !=
+                                                                        null ||
+                                                                    lastName !=
+                                                                        null)
+                                                                ? '${firstName ?? ''} ${lastName ?? ''}'
+                                                                    .trim()
+                                                                : null) ??
+                                                            email
+                                                                ?.split('@')
+                                                                .first ??
+                                                            'Unknown Customer';
+
                                                     return Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
                                                       children: [
                                                         Text(
                                                           customerName,
-                                                          style: const TextStyle(
-                                                            fontWeight: FontWeight.w600,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                             fontSize: 13,
                                                             color: Colors.white,
                                                           ),
                                                         ),
                                                         if (email != null) ...[
-                                                          const SizedBox(height: 2),
+                                                          const SizedBox(
+                                                              height: 2),
                                                           Text(
                                                             email,
-                                                            style: const TextStyle(
+                                                            style:
+                                                                const TextStyle(
                                                               fontSize: 11,
-                                                              color: Colors.white70,
+                                                              color: Colors
+                                                                  .white70,
                                                             ),
                                                           ),
                                                         ],
-                                                        const SizedBox(height: 2),
+                                                        const SizedBox(
+                                                            height: 2),
                                                         Text(
-                                                          data['racket'] ?? 'Unknown racket',
-                                                          style: const TextStyle(
+                                                          data['racket'] ??
+                                                              'Unknown racket',
+                                                          style:
+                                                              const TextStyle(
                                                             fontSize: 12,
-                                                            color: Colors.white70,
+                                                            color:
+                                                                Colors.white70,
                                                           ),
                                                         ),
                                                       ],
@@ -283,44 +342,69 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                               Row(
                                                 children: [
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                       horizontal: 6,
                                                       vertical: 3,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color: _getProgressColor(data['progress'] ?? 'Not received'),
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      color: _getProgressColor(
+                                                          data['progress'] ??
+                                                              'Not received'),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
                                                     ),
                                                     child: Text(
-                                                      data['progress'] ?? 'Not received',
+                                                      data['progress'] ??
+                                                          'Not received',
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 10,
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                       ),
                                                     ),
                                                   ),
                                                   const SizedBox(width: 8),
                                                   IconButton(
-                                                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                                    onPressed: () => _showDeleteDialog(request.reference.parent.parent!.id, request.id),
+                                                    icon: const Icon(
+                                                        Icons.delete,
+                                                        color: Colors.red,
+                                                        size: 20),
+                                                    onPressed: () =>
+                                                        _showDeleteDialog(
+                                                            request
+                                                                .reference
+                                                                .parent
+                                                                .parent!
+                                                                .id,
+                                                            request.id),
                                                     padding: EdgeInsets.zero,
-                                                    constraints: const BoxConstraints(),
+                                                    constraints:
+                                                        const BoxConstraints(),
                                                   ),
                                                 ],
                                               ),
                                               const SizedBox(height: 4),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
                                                   horizontal: 6,
                                                   vertical: 3,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: (data['paidStatus'] == true) ? Colors.green : Colors.orange,
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  color: (data['paidStatus'] ==
+                                                          true)
+                                                      ? Colors.green
+                                                      : Colors.orange,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
                                                 child: Text(
-                                                  (data['paidStatus'] == true) ? 'Paid' : 'Unpaid',
+                                                  (data['paidStatus'] == true)
+                                                      ? 'Paid'
+                                                      : 'Unpaid',
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 10,
@@ -336,18 +420,45 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                         const SizedBox(height: 12),
                                         const Divider(height: 1),
                                         const SizedBox(height: 12),
-                                        Text('Colors: ${_formatColors(data['racketColors'])}', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                        Text(
+                                            'Colors: ${_formatColors(data['racketColors'])}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white)),
                                         const SizedBox(height: 4),
-                                        Text('Grip Color: ${data['gripColor'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                        Text(
+                                            'Grip Color: ${data['gripColor'] ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white)),
                                         const SizedBox(height: 4),
-                                        Text('String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                        Text(
+                                            'String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white)),
                                         const SizedBox(height: 4),
-                                        Text('Tension: ${data['tension'] ?? 'Unknown'} lbs', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                        Text(
+                                            'Tension: ${data['tension'] ?? 'Unknown'} lbs',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white)),
                                         const SizedBox(height: 4),
-                                        Text('Payment Method: ${data['paymentMethod'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.white)),
-                                        if (data['additionalInfo'] != null && data['additionalInfo'].toString().isNotEmpty) ...[
+                                        Text(
+                                            'Payment Method: ${data['paymentMethod'] ?? 'Unknown'}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white)),
+                                        if (data['additionalInfo'] != null &&
+                                            data['additionalInfo']
+                                                .toString()
+                                                .isNotEmpty) ...[
                                           const SizedBox(height: 4),
-                                          Text('Additional Info: ${data['additionalInfo']}', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                          Text(
+                                              'Additional Info: ${data['additionalInfo']}',
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.white)),
                                         ],
                                         const SizedBox(height: 4),
                                         Text(
@@ -362,37 +473,72 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                           children: [
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  const Text('Payment Status:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                                  const Text('Payment Status:',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white)),
                                                   const SizedBox(height: 4),
                                                   Switch(
-                                                    value: data['paidStatus'] == true,
+                                                    value: data['paidStatus'] ==
+                                                        true,
                                                     onChanged: (value) {
                                                       _updateRequestStatus(
-                                                        request.reference.parent.parent!.id, 
-                                                        request.id, 
-                                                        'paidStatus', 
-                                                        value
-                                                      );
+                                                          request
+                                                              .reference
+                                                              .parent
+                                                              .parent!
+                                                              .id,
+                                                          request.id,
+                                                          'paidStatus',
+                                                          value);
                                                     },
                                                     activeColor: Colors.green,
-                                                    inactiveThumbColor: Colors.orange,
+                                                    inactiveThumbColor:
+                                                        Colors.orange,
                                                   ),
                                                 ],
                                               ),
                                             ),
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  const Text('Progress:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
+                                                  const Text('Progress:',
+                                                      style: TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white)),
                                                   const SizedBox(height: 4),
-                                                  _buildProgressButtons(request.reference.parent.parent!.id, request.id, data['progress'] ?? 'Not received'),
+                                                  _buildProgressButtons(
+                                                      request.reference.parent
+                                                          .parent!.id,
+                                                      request.id,
+                                                      data['progress'] ??
+                                                          'Not received'),
                                                 ],
                                               ),
                                             ),
                                           ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child:
+                                              _buildReadyForPickupEmailButton(
+                                            userId: request
+                                                .reference.parent.parent!.id,
+                                            requestId: request.id,
+                                            currentProgress: data['progress'] ??
+                                                'Not received',
+                                            requestData: data,
+                                          ),
                                         ),
                                       ],
                                     ],
@@ -441,21 +587,30 @@ class _StringerDashboardState extends State<StringerDashboard> {
 
   String _formatDateTime(DateTime? dateTime) {
     if (dateTime == null) return 'Unknown';
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return '${dateTime.month}/${dateTime.day}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildProgressButtons(String userId, String requestId, String currentProgress) {
-    final progressStages = ['Not received', 'Received', 'In progress', 'Ready for pickup', 'Picked up'];
-    
+  Widget _buildProgressButtons(
+      String userId, String requestId, String currentProgress) {
+    final progressStages = [
+      'Not received',
+      'Received',
+      'In progress',
+      'Ready for pickup',
+      'Picked up'
+    ];
+
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: progressStages.map((stage) {
         final isSelected = stage == currentProgress;
         return ElevatedButton(
-          onPressed: () => _updateRequestStatus(userId, requestId, 'progress', stage),
+          onPressed: () =>
+              _updateRequestStatus(userId, requestId, 'progress', stage),
           style: ElevatedButton.styleFrom(
-            backgroundColor: isSelected ? _getProgressColor(stage) : Colors.grey.shade300,
+            backgroundColor:
+                isSelected ? _getProgressColor(stage) : Colors.grey.shade300,
             foregroundColor: isSelected ? Colors.white : Colors.black,
             minimumSize: const Size(80, 32),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -467,7 +622,75 @@ class _StringerDashboardState extends State<StringerDashboard> {
     );
   }
 
-  Future<void> _updateRequestStatus(String userId, String requestId, String field, dynamic value) async {
+  Widget _buildReadyForPickupEmailButton({
+    required String userId,
+    required String requestId,
+    required String currentProgress,
+    required Map<String, dynamic> requestData,
+  }) {
+    final sentAt = requestData['readyForPickupEmailLastSentAt'] as Timestamp?;
+    final alreadySent = sentAt != null;
+    final canSend =
+        currentProgress == 'Ready for pickup' || currentProgress == 'Picked up';
+    final isSending = _sendingEmailRequestIds.contains(requestId);
+    final buttonDisabled = alreadySent || !canSend || isSending;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ElevatedButton.icon(
+          onPressed: buttonDisabled
+              ? null
+              : () => _sendReadyForPickupEmail(
+                    userId: userId,
+                    requestId: requestId,
+                    requestData: requestData,
+                  ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                alreadySent ? Colors.green : const Color(0xFFB3A369),
+            foregroundColor: Colors.white,
+            disabledBackgroundColor:
+                alreadySent ? Colors.green : Colors.grey.shade600,
+            disabledForegroundColor:
+                alreadySent ? Colors.white : Colors.white70,
+          ),
+          icon: alreadySent
+              ? const Icon(Icons.check_circle_outline)
+              : isSending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.email_outlined),
+          label: Text(
+            alreadySent
+                ? 'Ready-for-Pickup Email Sent'
+                : (isSending ? 'Sending...' : 'Send Ready-for-Pickup Email'),
+          ),
+        ),
+        if (alreadySent) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Sent on ${_formatDateTime(sentAt.toDate())}',
+            style: const TextStyle(fontSize: 11, color: Colors.white70),
+          ),
+        ],
+        if (!alreadySent && !canSend) ...[
+          const SizedBox(height: 4),
+          const Text(
+            'Set progress to Ready for pickup before sending.',
+            style: TextStyle(fontSize: 11, color: Colors.white70),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _updateRequestStatus(
+      String userId, String requestId, String field, dynamic value) async {
     try {
       await FirebaseFirestore.instance
           .collection('users')
@@ -475,11 +698,168 @@ class _StringerDashboardState extends State<StringerDashboard> {
           .collection('stringingRequests')
           .doc(requestId)
           .update({field: value});
+
+      if (field == 'progress' && value == 'Picked up') {
+        final deletedCount = await _deleteReadyForPickupMailDocs(
+            userId: userId, requestId: requestId);
+        if (mounted && deletedCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Picked up set. Cleaned up $deletedCount email record(s) for this request.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error updating status: $e')),
         );
+      }
+    }
+  }
+
+  Future<int> _deleteReadyForPickupMailDocs({
+    required String userId,
+    required String requestId,
+  }) async {
+    final firestore = FirebaseFirestore.instance;
+    final matchingMailDocs = await firestore
+        .collection('mail')
+        .where('metadata.userId', isEqualTo: userId)
+        .where('metadata.requestId', isEqualTo: requestId)
+        .where('metadata.type', isEqualTo: 'ready_for_pickup')
+        .get();
+
+    if (matchingMailDocs.docs.isEmpty) {
+      return 0;
+    }
+
+    final batch = firestore.batch();
+    for (final doc in matchingMailDocs.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+    return matchingMailDocs.docs.length;
+  }
+
+  Future<void> _sendReadyForPickupEmail({
+    required String userId,
+    required String requestId,
+    required Map<String, dynamic> requestData,
+  }) async {
+    if (_sendingEmailRequestIds.contains(requestId)) {
+      return;
+    }
+
+    final progress = (requestData['progress'] as String?) ?? 'Not received';
+    final canSend = progress == 'Ready for pickup' || progress == 'Picked up';
+    if (!canSend) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Set request progress to Ready for pickup before sending the email.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      setState(() {
+        _sendingEmailRequestIds.add(requestId);
+      });
+
+      final userData = await _getUserData(userId);
+      final requestEmail = (requestData['email'] as String?)?.trim();
+      final userEmail = (userData?['email'] as String?)?.trim();
+      final email = (requestEmail?.isNotEmpty == true)
+          ? requestEmail!
+          : (userEmail ?? '');
+
+      if (email.isEmpty) {
+        throw Exception('No email found for this request');
+      }
+
+      final displayName = (userData?['displayName'] as String?)?.trim();
+      final firstName = (userData?['firstName'] as String?)?.trim();
+      final resolvedName = (displayName != null && displayName.isNotEmpty)
+          ? displayName
+          : ((firstName != null && firstName.isNotEmpty) ? firstName : 'there');
+
+      final racket = (requestData['racket'] ?? 'your racket').toString();
+      final stringType = (requestData['stringType'] ?? 'your selected string')
+          .toString()
+          .replaceAll('\n', ' ');
+      final tension = (requestData['tension'] ?? 'N/A').toString();
+      final cost = (requestData['cost'] ?? 'N/A').toString();
+      final paymentMethod =
+          (requestData['paymentMethod'] ?? 'Unknown').toString();
+      final emailNonce = DateTime.now().millisecondsSinceEpoch;
+
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+      final mailRef = firestore.collection('mail').doc();
+      final requestRef = firestore
+          .collection('users')
+          .doc(userId)
+          .collection('stringingRequests')
+          .doc(requestId);
+
+      batch.set(mailRef, {
+        'to': [email],
+        'message': {
+          'subject': 'Your racket is ready for pickup!',
+          'text':
+              'Hi $resolvedName,\n\nYour racket ($racket) is now ready for pickup.\nString: $stringType\nTension: $tension lbs\nPrice Paid: \$$cost\nPayment Method: $paymentMethod\n\nPlease monitor the \'Next Pickup/Dropoff\' page for the next pickup/dropoff date and time.\n\n***REMINDER: PLEASE PAY BEFORE PICKING UP IF USING ZELLE***\n\nThank you for using BuzzString!',
+          'html':
+              '<p>Hi $resolvedName,</p><p>Your racket (<strong>$racket</strong>) is now ready for pickup.</p><p><strong>String:</strong> $stringType<br><strong>Tension:</strong> $tension lbs<br><strong>Price Paid:</strong> \$$cost<br><strong>Payment Method:</strong> $paymentMethod</p><p>Please monitor the <strong>\'Next Pickup/Dropoff\'</strong> page for the next pickup/dropoff date and time.</p><p><em><strong>REMINDER: PLEASE PAY BEFORE PICKING UP IF USING ZELLE</strong></em></p><p>Thank you for using BuzzString!</p>',
+        },
+        'headers': {
+          'X-BuzzString-Notification-Id': '$requestId-$emailNonce',
+        },
+        'metadata': {
+          'type': 'ready_for_pickup',
+          'requestId': requestId,
+          'userId': userId,
+          'queuedBy': FirebaseAuth.instance.currentUser?.uid,
+          'queuedAt': FieldValue.serverTimestamp(),
+        },
+      });
+
+      batch.update(requestRef, {
+        'readyForPickupEmailLastSentAt': FieldValue.serverTimestamp(),
+        'readyForPickupEmailRecipient': email,
+      });
+
+      await batch.commit();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ready-for-pickup email queued for $email'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending email: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _sendingEmailRequestIds.remove(requestId);
+        });
       }
     }
   }
@@ -530,7 +910,7 @@ class _StringerDashboardState extends State<StringerDashboard> {
           .collection('stringingRequests')
           .doc(requestId)
           .delete();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

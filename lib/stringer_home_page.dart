@@ -4,6 +4,7 @@ import 'auth_service.dart';
 import 'stringer_dashboard.dart';
 import 'update_string_types.dart';
 import 'statistics_page.dart';
+import 'plan_next_arrival_page.dart';
 
 class StringerHomePage extends StatefulWidget {
   const StringerHomePage({super.key});
@@ -15,12 +16,13 @@ class StringerHomePage extends StatefulWidget {
 class _StringerHomePageState extends State<StringerHomePage> {
   bool _isDashboardHovered = false;
   bool _isStringTypesHovered = false;
+  bool _isPlanArrivalHovered = false;
   bool _isStatsHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF003057),
@@ -39,7 +41,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
         ),
         child: Center(
           child: Container(
-            width: MediaQuery.of(context).size.width > 600 
+            width: MediaQuery.of(context).size.width > 600
                 ? MediaQuery.of(context).size.width * 0.6
                 : MediaQuery.of(context).size.width * 0.9,
             constraints: const BoxConstraints(maxWidth: 600),
@@ -89,27 +91,32 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     Text(
                       'Welcome, ${user?.displayName ?? user?.email ?? 'Stringer'}!',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 15),
                     const SizedBox(height: 25),
                     Center(
                       child: MouseRegion(
-                        onEnter: (_) => setState(() => _isDashboardHovered = true),
-                        onExit: (_) => setState(() => _isDashboardHovered = false),
+                        onEnter: (_) =>
+                            setState(() => _isDashboardHovered = true),
+                        onExit: (_) =>
+                            setState(() => _isDashboardHovered = false),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          transform: Matrix4.identity()..scale(_isDashboardHovered ? 1.05 : 1.0),
+                          transform: Matrix4.identity()
+                            ..scale(_isDashboardHovered ? 1.05 : 1.0),
                           child: ElevatedButton.icon(
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const StringerDashboard(),
+                                  builder: (context) =>
+                                      const StringerDashboard(),
                                 ),
                               );
                             },
@@ -124,7 +131,8 @@ class _StringerHomePageState extends State<StringerHomePage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
                             ),
                           ),
                         ),
@@ -133,17 +141,21 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     Center(
                       child: MouseRegion(
-                        onEnter: (_) => setState(() => _isStringTypesHovered = true),
-                        onExit: (_) => setState(() => _isStringTypesHovered = false),
+                        onEnter: (_) =>
+                            setState(() => _isStringTypesHovered = true),
+                        onExit: (_) =>
+                            setState(() => _isStringTypesHovered = false),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          transform: Matrix4.identity()..scale(_isStringTypesHovered ? 1.05 : 1.0),
+                          transform: Matrix4.identity()
+                            ..scale(_isStringTypesHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const UpdateStringTypes(),
+                                  builder: (context) =>
+                                      const UpdateStringTypes(),
                                 ),
                               );
                             },
@@ -158,7 +170,47 @@ class _StringerHomePageState extends State<StringerHomePage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => _isPlanArrivalHovered = true),
+                        onExit: (_) =>
+                            setState(() => _isPlanArrivalHovered = false),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          transform: Matrix4.identity()
+                            ..scale(_isPlanArrivalHovered ? 1.05 : 1.0),
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const PlanNextArrivalPage(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.event_note),
+                            label: const Text(
+                              'Plan Next Arrival',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
                             ),
                           ),
                         ),
@@ -171,7 +223,8 @@ class _StringerHomePageState extends State<StringerHomePage> {
                         onExit: (_) => setState(() => _isStatsHovered = false),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          transform: Matrix4.identity()..scale(_isStatsHovered ? 1.05 : 1.0),
+                          transform: Matrix4.identity()
+                            ..scale(_isStatsHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
                               Navigator.push(
@@ -192,7 +245,8 @@ class _StringerHomePageState extends State<StringerHomePage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
                             ),
                           ),
                         ),
@@ -249,7 +303,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 1.5.1',
+                        'Version 2.0.1',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
@@ -270,7 +324,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
     try {
       final authService = AuthService();
       await authService.signOut();
-      
+
       if (context.mounted) {
         Navigator.pushReplacementNamed(context, '/');
       }

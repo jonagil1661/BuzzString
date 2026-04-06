@@ -11,11 +11,11 @@ import 'package:flutter/services.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   if (kIsWeb) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   }
-  
+
   if (!kIsWeb) {
     await dotenv.load(fileName: ".env");
   }
@@ -48,7 +48,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const GoogleLoginPage(),
         '/home': (context) => const ProtectedRoute(child: HomePage()),
-        '/stringer': (context) => const ProtectedRoute(child: StringerHomePage()),
+        '/stringer': (context) =>
+            const ProtectedRoute(child: StringerHomePage()),
       },
     );
   }
@@ -72,10 +73,12 @@ class AuthWrapper extends StatelessWidget {
             ),
           );
         }
-        
+
         if (snapshot.hasData) {
           final user = snapshot.data!;
           if (user.email == 'jona.gil1661@gmail.com') {
+            return const StringerHomePage();
+          } else if (user.email == 'buzzstring.badminton@gmail.com') {
             return const StringerHomePage();
           } else {
             return const HomePage();
@@ -90,7 +93,7 @@ class AuthWrapper extends StatelessWidget {
 
 class ProtectedRoute extends StatelessWidget {
   final Widget child;
-  
+
   const ProtectedRoute({super.key, required this.child});
 
   @override
@@ -108,7 +111,7 @@ class ProtectedRoute extends StatelessWidget {
             ),
           );
         }
-        
+
         if (snapshot.hasData) {
           return child;
         } else {
