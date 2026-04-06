@@ -262,7 +262,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.0.1',
+                        'Version 2.0.2',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,

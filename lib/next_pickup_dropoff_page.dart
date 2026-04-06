@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NextPickupDropoffPage extends StatefulWidget {
   const NextPickupDropoffPage({super.key});
@@ -10,6 +11,7 @@ class NextPickupDropoffPage extends StatefulWidget {
 
 class _NextPickupDropoffPageState extends State<NextPickupDropoffPage> {
   Map<String, dynamic>? _cachedArrivalData;
+  int _streamRetryKey = 0;
 
   Timestamp? _readTimestamp(Map<String, dynamic> data, String key) {
     final value = data[key];
@@ -211,27 +213,141 @@ class _NextPickupDropoffPageState extends State<NextPickupDropoffPage> {
                     ),
                     const SizedBox(height: 28),
                     StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      key: ValueKey(_streamRetryKey),
                       stream: FirebaseFirestore.instance
                           .collection('ArrivalDate')
-                          .snapshots(),
+                          .snapshots()
+                          .timeout(
+                        const Duration(seconds: 10),
+                        onTimeout: (sink) {
+                          sink.addError(
+                              'Connection timeout. Please check your internet.');
+                        },
+                      ),
                       builder: (context, snapshot) {
+                        final user = FirebaseAuth.instance.currentUser;
+                        final isAuthenticated = user != null;
+                        // Handle different connection states
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
+                          // If we have cached data, show it while waiting
+                          if (_cachedArrivalData != null) {
+                            return _buildArrivalDetails(_cachedArrivalData!);
+                          }
+                          // Otherwise show loading
                           return const CircularProgressIndicator(
                             color: Color(0xFFB3A369),
                           );
                         }
 
-                        if (snapshot.hasError && _cachedArrivalData == null) {
-                          return const Text(
-                            'Unable to load next arrival details.',
-                            style: TextStyle(color: Colors.white70),
-                            textAlign: TextAlign.center,
+                        // Handle errors
+                        if (snapshot.hasError) {
+                          // If we have cached data, show it despite the error
+                          if (_cachedArrivalData != null) {
+                            return Column(
+                              children: [
+                                _buildArrivalDetails(_cachedArrivalData!),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Syncing...',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          // Check if user is authenticated
+                          if (!isAuthenticated) {
+                            return Column(
+                              children: [
+                                Icon(
+                                  Icons.lock_outline,
+                                  color: Colors.red[300],
+                                  size: 48,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Please log in to view arrival details',
+                                  style: TextStyle(
+                                    color: Colors.red[300],
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: const Icon(Icons.arrow_back),
+                                  label: const Text('Go Back'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFB3A369),
+                                    foregroundColor: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          // Otherwise show error with retry
+                          final errorMsg =
+                              snapshot.error?.toString() ?? 'Unknown error';
+                          return Column(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red[300],
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Unable to load arrival details',
+                                style: TextStyle(
+                                  color: Colors.red[300],
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  errorMsg.length > 100
+                                      ? '${errorMsg.substring(0, 100)}...'
+                                      : errorMsg,
+                                  style: TextStyle(
+                                    color: Colors.red[200],
+                                    fontSize: 11,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _streamRetryKey++;
+                                  });
+                                },
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFB3A369),
+                                  foregroundColor: Colors.black,
+                                ),
+                              ),
+                            ],
                           );
                         }
 
+                        // Process snapshot data
                         final docs = snapshot.data?.docs ?? [];
                         final selectedData = _selectArrivalData(docs);
+
                         if (selectedData != null &&
                             _hasRequiredFields(selectedData)) {
                           _cachedArrivalData = selectedData;
@@ -240,11 +356,23 @@ class _NextPickupDropoffPageState extends State<NextPickupDropoffPage> {
                         final displayData = _cachedArrivalData;
 
                         if (displayData == null) {
-                          return const Text(
-                            'No next arrival planned yet.\nPlease check back soon.',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 16),
-                            textAlign: TextAlign.center,
+                          return Column(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                color: Colors.white.withOpacity(0.3),
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No next arrival planned yet.\nPlease check back soon.',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           );
                         }
 
