@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,14 +15,58 @@ class _StringerDashboardState extends State<StringerDashboard> {
   final Set<String> _expandedRequests = <String>{};
   final Set<String> _sendingEmailRequestIds = <String>{};
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  String _searchInput = '';
+  String _searchQuery = '';
+  late final Stream<QuerySnapshot> _requestsStream;
   final Map<String, Map<String, dynamic>?> _userCache = {};
   final Map<String, Future<DocumentSnapshot<Map<String, dynamic>>>>
       _userFutures = {};
+  final Map<String, String> _requestSearchIndex = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _requestsStream = FirebaseFirestore.instance
+        .collectionGroup('stringingRequests')
+        .snapshots();
+  }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  String _buildSearchText({
+    required Map<String, dynamic> requestData,
+    Map<String, dynamic>? userData,
+  }) {
+    final racket = (requestData['racket'] as String?) ?? '';
+    final firstName = (userData?['firstName'] as String?) ?? '';
+    final lastName = (userData?['lastName'] as String?) ?? '';
+    final displayName = (userData?['displayName'] as String?) ?? '';
+
+    return '$racket $firstName $lastName $displayName'.toLowerCase();
+  }
+
+    bool _matchesSearchQuery(
+      Map<String, dynamic> requestData, String requestId) {
+    final query = _searchQuery;
+    if (query.isEmpty) {
+      return true;
+    }
+
+    final indexedSearchText = _requestSearchIndex[requestId];
+    if (indexedSearchText != null) {
+      return indexedSearchText.contains(query);
+    }
+
+    // Keep cards visible until a search index is available to avoid flicker.
+    return true;
   }
 
   Future<Map<String, dynamic>?> _getUserData(String userId) async {
@@ -132,10 +178,63 @@ class _StringerDashboardState extends State<StringerDashboard> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        _searchInput = value;
+                        _searchDebounce?.cancel();
+                        _searchDebounce =
+                            Timer(const Duration(milliseconds: 120), () {
+                          if (!mounted) return;
+                          setState(() {
+                            _searchQuery = _searchInput.trim().toLowerCase();
+                          });
+                        });
+                      },
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Search by first name, last name, or racket',
+                        hintStyle: const TextStyle(color: Colors.white60),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.white70),
+                        suffixIcon: _searchInput.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear,
+                                    color: Colors.white70),
+                                onPressed: () {
+                                  _searchDebounce?.cancel();
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchInput = '';
+                                    _searchQuery = '';
+                                  });
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.08),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFB3A369)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collectionGroup('stringingRequests')
-                          .snapshots(),
+                      stream: _requestsStream,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -176,52 +275,81 @@ class _StringerDashboardState extends State<StringerDashboard> {
 
                         // Pre-load user data for all requests
                         for (final request in requests) {
+                          final requestData = request.data() as Map<String, dynamic>;
                           final userId = request.reference.parent.parent!.id;
+                          _requestSearchIndex[request.id] = _buildSearchText(
+                            requestData: requestData,
+                            userData: _userCache[userId],
+                          );
                           if (!_userCache.containsKey(userId) &&
                               !_userFutures.containsKey(userId)) {
-                            _getUserData(userId);
+                            _getUserData(userId).then((userData) {
+                              _requestSearchIndex[request.id] = _buildSearchText(
+                                requestData: requestData,
+                                userData: userData,
+                              );
+                              if (mounted && _searchQuery.isNotEmpty) {
+                                setState(() {});
+                              }
+                            });
                           }
                         }
 
+                        final hasMatches = requests.any((request) {
+                          final data = request.data() as Map<String, dynamic>;
+                          return _matchesSearchQuery(data, request.id);
+                        });
+
                         return Column(
-                          children: requests.map((request) {
+                          children: [
+                            ...requests.map((request) {
                             final data = request.data() as Map<String, dynamic>;
+                            final matchesSearch =
+                              _matchesSearchQuery(data, request.id);
                             final timestamp = data['timestamp'] as Timestamp?;
                             final dateTime = timestamp?.toDate();
                             final isExpanded =
                                 _expandedRequests.contains(request.id);
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              color: Colors.white.withOpacity(0.1),
-                              child: InkWell(
-                                onTap: () {
-                                  final currentScrollOffset =
-                                      _scrollController.hasClients
-                                          ? _scrollController.offset
-                                          : 0.0;
-                                  setState(() {
-                                    if (isExpanded) {
-                                      _expandedRequests.remove(request.id);
-                                    } else {
-                                      _expandedRequests.add(request.id);
-                                    }
-                                  });
-                                  // Restore scroll position after rebuild
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    if (_scrollController.hasClients) {
-                                      _scrollController
-                                          .jumpTo(currentScrollOffset);
-                                    }
-                                  });
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
+                            return AnimatedSize(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeInOut,
+                              alignment: Alignment.topCenter,
+                              child: matchesSearch
+                                  ? Card(
+                                      margin:
+                                          const EdgeInsets.only(bottom: 8),
+                                      color: Colors.white.withOpacity(0.1),
+                                      child: InkWell(
+                                        onTap: () {
+                                          final currentScrollOffset =
+                                              _scrollController.hasClients
+                                                  ? _scrollController.offset
+                                                  : 0.0;
+                                          setState(() {
+                                            if (isExpanded) {
+                                              _expandedRequests.remove(
+                                                  request.id);
+                                            } else {
+                                              _expandedRequests
+                                                  .add(request.id);
+                                            }
+                                          });
+                                          // Restore scroll position after rebuild
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback((_) {
+                                            if (_scrollController.hasClients) {
+                                              _scrollController.jumpTo(
+                                                  currentScrollOffset);
+                                            }
+                                          });
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
                                       Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
@@ -416,137 +544,183 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                           ),
                                         ],
                                       ),
-                                      if (isExpanded) ...[
-                                        const SizedBox(height: 12),
-                                        const Divider(height: 1),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                            'Colors: ${_formatColors(data['racketColors'])}',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white)),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                            'Grip Color: ${data['gripColor'] ?? 'Unknown'}',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white)),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                            'String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white)),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                            'Tension: ${data['tension'] ?? 'Unknown'} lbs',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white)),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                            'Payment Method: ${data['paymentMethod'] ?? 'Unknown'}',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white)),
-                                        if (data['additionalInfo'] != null &&
-                                            data['additionalInfo']
-                                                .toString()
-                                                .isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
-                                              'Additional Info: ${data['additionalInfo']}',
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white)),
-                                        ],
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Submitted: ${_formatDateTime(dateTime)}',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.white70,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
+                                      AnimatedSize(
+                                        duration:
+                                            const Duration(milliseconds: 280),
+                                        curve: Curves.easeInOutCubic,
+                                        alignment: Alignment.topCenter,
+                                        child: isExpanded
+                                            ? Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                                  const Text('Payment Status:',
-                                                      style: TextStyle(
+                                                  const SizedBox(height: 12),
+                                                  const Divider(height: 1),
+                                                  const SizedBox(height: 12),
+                                                  Text(
+                                                      'Colors: ${_formatColors(data['racketColors'])}',
+                                                      style: const TextStyle(
                                                           fontSize: 12,
-                                                          fontWeight:
-                                                              FontWeight.bold,
                                                           color: Colors.white)),
                                                   const SizedBox(height: 4),
-                                                  Switch(
-                                                    value: data['paidStatus'] ==
-                                                        true,
-                                                    onChanged: (value) {
-                                                      _updateRequestStatus(
-                                                          request
-                                                              .reference
-                                                              .parent
-                                                              .parent!
-                                                              .id,
-                                                          request.id,
-                                                          'paidStatus',
-                                                          value);
-                                                    },
-                                                    activeColor: Colors.green,
-                                                    inactiveThumbColor:
-                                                        Colors.orange,
+                                                  Text(
+                                                      'Grip Color: ${data['gripColor'] ?? 'Unknown'}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white)),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                      'String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white)),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                      'Tension: ${data['tension'] ?? 'Unknown'} lbs',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white)),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                      'Payment Method: ${data['paymentMethod'] ?? 'Unknown'}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.white)),
+                                                  if (data['additionalInfo'] !=
+                                                          null &&
+                                                      data['additionalInfo']
+                                                          .toString()
+                                                          .isNotEmpty) ...[
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                        'Additional Info: ${data['additionalInfo']}',
+                                                        style: const TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Colors.white)),
+                                                  ],
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'Submitted: ${_formatDateTime(dateTime)}',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            const Text(
+                                                                'Payment Status:',
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: Colors
+                                                                        .white)),
+                                                            const SizedBox(
+                                                                height: 4),
+                                                            Switch(
+                                                              value: data[
+                                                                      'paidStatus'] ==
+                                                                  true,
+                                                              onChanged:
+                                                                  (value) {
+                                                                _updateRequestStatus(
+                                                                    request
+                                                                        .reference
+                                                                        .parent
+                                                                        .parent!
+                                                                        .id,
+                                                                    request.id,
+                                                                    'paidStatus',
+                                                                    value);
+                                                              },
+                                                              activeColor:
+                                                                  Colors.green,
+                                                              inactiveThumbColor:
+                                                                  Colors.orange,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            const Text(
+                                                                'Progress:',
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: Colors
+                                                                        .white)),
+                                                            const SizedBox(
+                                                                height: 4),
+                                                            _buildProgressButtons(
+                                                                request
+                                                                    .reference
+                                                                    .parent
+                                                                    .parent!
+                                                                    .id,
+                                                                request.id,
+                                                                data['progress'] ??
+                                                                    'Not received'),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child:
+                                                        _buildReadyForPickupEmailButton(
+                                                      userId: request.reference
+                                                          .parent.parent!.id,
+                                                      requestId: request.id,
+                                                      currentProgress:
+                                                          data['progress'] ??
+                                                              'Not received',
+                                                      requestData: data,
+                                                    ),
                                                   ),
                                                 ],
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Progress:',
-                                                      style: TextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors.white)),
-                                                  const SizedBox(height: 4),
-                                                  _buildProgressButtons(
-                                                      request.reference.parent
-                                                          .parent!.id,
-                                                      request.id,
-                                                      data['progress'] ??
-                                                          'Not received'),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Align(
-                                          alignment: Alignment.centerLeft,
-                                          child:
-                                              _buildReadyForPickupEmailButton(
-                                            userId: request
-                                                .reference.parent.parent!.id,
-                                            requestId: request.id,
-                                            currentProgress: data['progress'] ??
-                                                'Not received',
-                                            requestData: data,
-                                          ),
-                                        ),
-                                      ],
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ),
                                     ],
                                   ),
-                                ),
-                              ),
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
                             );
                           }).toList(),
+                            if (!hasMatches)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'No matching stringing requests found',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white70),
+                                ),
+                              ),
+                          ],
                         );
                       },
                     ),

@@ -113,7 +113,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
             final stringName = _getStringNameFromDocumentId(doc.id);
             if (stringName != null && _stringImages.containsKey(stringName)) {
               _stringStatus[stringName] = doc.data()['availability'] ?? true;
-              _stringCosts[stringName] = (doc.data()['cost'] as num?)?.toDouble() ?? 20.0;
+              final firestoreCost = (doc.data()['cost'] as num?)?.toDouble();
+              if (firestoreCost != null) {
+                _stringCosts[stringName] = firestoreCost;
+              } else {
+                _stringCosts.remove(stringName);
+              }
             }
           }
         });
@@ -129,10 +134,12 @@ class _StringingRequestPageState extends State<StringingRequestPage> {
       for (String stringName in _stringImages.keys) {
         if (!stringName.startsWith("Custom: ") && stringName != "I have my own string") {
           try {
-            tempCosts[stringName] = await statusManager.getCost(stringName);
+            final cost = await statusManager.getCost(stringName);
+            if (cost != null) {
+              tempCosts[stringName] = cost;
+            }
           } catch (e) {
             print('Error loading cost for $stringName: $e');
-            tempCosts[stringName] = 20.0;
           }
         } else {
           tempCosts[stringName] = 18.0;

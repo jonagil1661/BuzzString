@@ -41,7 +41,6 @@ class StringStatusManager {
 
       await _firestore.collection(_collectionName).doc(docId).set({
         'availability': isInStock,
-        'cost': _stringCosts[stringName] ?? 20,
       }, SetOptions(merge: true));
 
       print('Successfully updated document: $docId');
@@ -56,7 +55,6 @@ class StringStatusManager {
       print('Updating document: $docId with cost: $newCost');
 
       await _firestore.collection(_collectionName).doc(docId).set({
-        'availability': true,
         'cost': newCost,
       }, SetOptions(merge: true));
 
@@ -66,21 +64,16 @@ class StringStatusManager {
     }
   }
 
-  Future<double> getCost(String stringName) async {
+  Future<double?> getCost(String stringName) async {
     try {
       final doc = await _firestore.collection(_collectionName).doc(_getDocumentId(stringName)).get();
       if (doc.exists) {
-        final cost = (doc.data()?['cost'] as num?)?.toDouble() ?? 20.0;
-        return cost;
-      } else {
-        await _createStringDocument(stringName);
-        final cost = (_stringCosts[stringName] ?? 20).toDouble();
-        return cost;
+        return (doc.data()?['cost'] as num?)?.toDouble();
       }
+      return null;
     } catch (e) {
       print('Error getting cost: $e');
-      final cost = (_stringCosts[stringName] ?? 20).toDouble();
-      return cost;
+      return null;
     }
   }
 
@@ -88,7 +81,6 @@ class StringStatusManager {
     try {
       await _firestore.collection(_collectionName).doc(_getDocumentId(stringName)).set({
         'availability': true,
-        'cost': _stringCosts[stringName] ?? 20,
       });
     } catch (e) {
       print('Error creating document: $e');
@@ -161,7 +153,7 @@ class StringStatusManager {
     try {
       print('=== TESTING FIRESTORE CONNECTION ===');
       
-      final testDoc = await _firestore.collection('test').doc('connection').set({
+      await _firestore.collection('test').doc('connection').set({
         'timestamp': FieldValue.serverTimestamp(),
         'test': true,
       });

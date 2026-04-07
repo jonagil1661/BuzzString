@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'string_status_manager.dart';
 
@@ -23,19 +26,71 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
   Map<String, bool> _stringStatus = {};
   Map<String, double> _stringCosts = {};
   Map<String, TextEditingController> _costControllers = {};
+  final Map<String, bool> _costUpdatedByString = {};
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _stringAvailabilitySubscription;
 
   @override
   void initState() {
     super.initState();
     _initializeStatus();
+    _listenToStringAvailability();
   }
 
   @override
   void dispose() {
+    _stringAvailabilitySubscription?.cancel();
     for (var controller in _costControllers.values) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  void _listenToStringAvailability() {
+    _stringAvailabilitySubscription = FirebaseFirestore.instance
+        .collection('stringAvailability')
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+
+      setState(() {
+        for (final doc in snapshot.docs) {
+          final stringName = _getStringNameFromDocumentId(doc.id);
+          if (stringName == null || !_stringImages.containsKey(stringName)) {
+            continue;
+          }
+
+          final data = doc.data();
+          _stringStatus[stringName] = data['availability'] == true;
+
+          final firestoreCost = (data['cost'] as num?)?.toDouble();
+          if (firestoreCost != null) {
+            _stringCosts[stringName] = firestoreCost;
+            _costControllers[stringName]?.text = firestoreCost.toStringAsFixed(0);
+            _costUpdatedByString[stringName] = true;
+          } else {
+            _stringCosts.remove(stringName);
+            _costControllers[stringName]?.text = '';
+            _costUpdatedByString[stringName] = false;
+          }
+        }
+      });
+    });
+  }
+
+  String? _getStringNameFromDocumentId(String docId) {
+    const mapping = {
+      'bg65_ti_white': 'BG65 Ti\nWhite',
+      'bg65_ti_pink': 'BG65 Ti\nPink',
+      'bg65_ti_yellow': 'BG65 Ti\nYellow',
+      'bg80_white': 'BG80\nWhite',
+      'bg80_yellow': 'BG80\nYellow',
+      'bg80_black': 'BG80\nBlack',
+      'exbolt_63_yellow': 'Exbolt 63\nYellow',
+      'aerobite_white_red': 'Aerobite\nWhite/Red',
+    };
+
+    return mapping[docId];
   }
 
   Future<void> _initializeStatus() async {
@@ -45,7 +100,13 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     
     for (String stringName in _stringImages.keys) {
       tempStatus[stringName] = await statusManager.isInStock(stringName);
-      tempCosts[stringName] = await statusManager.getCost(stringName);
+      final cost = await statusManager.getCost(stringName);
+      if (cost != null) {
+        tempCosts[stringName] = cost;
+        _costUpdatedByString[stringName] = true;
+      } else {
+        _costUpdatedByString[stringName] = false;
+      }
       
       if (!_costControllers.containsKey(stringName)) {
         _costControllers[stringName] = TextEditingController();
@@ -58,7 +119,9 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
         _stringCosts = tempCosts;
         
         for (String stringName in _stringImages.keys) {
-          _costControllers[stringName]!.text = _stringCosts[stringName]!.toStringAsFixed(0);
+          final cost = _stringCosts[stringName];
+          _costControllers[stringName]!.text =
+              (cost != null) ? cost.toStringAsFixed(0) : '';
         }
       });
     }
@@ -87,6 +150,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
   Future<void> _confirmStringCost(String stringName) async {
     final controller = _costControllers[stringName];
     if (controller == null) return;
+    final previousCost = _stringCosts[stringName];
     
     final newCost = double.tryParse(controller.text);
     if (newCost == null || newCost <= 0) {
@@ -108,6 +172,11 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     try {
       await StringStatusManager().updateCost(stringName, newCost);
       print('Cost updated successfully in Firestore');
+      if (mounted) {
+        setState(() {
+          _costUpdatedByString[stringName] = true;
+        });
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Cost updated to \$${newCost.toStringAsFixed(0)}'),
@@ -118,7 +187,12 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
       print('Error updating cost in Firestore: $e');
       if (mounted) {
         setState(() {
-          _stringCosts[stringName] = _stringCosts[stringName] ?? 20.0;
+          if (previousCost != null) {
+            _stringCosts[stringName] = previousCost;
+          } else {
+            _stringCosts.remove(stringName);
+          }
+          _costUpdatedByString[stringName] = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -211,33 +285,6 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            await StringStatusManager().testFirestoreConnection();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Test Connection'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await StringStatusManager().initializeStringAvailability();
-                            await _initializeStatus(); // Reload the status after initialization
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFB3A369),
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Initialize Collection'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -246,6 +293,8 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                           final stringName = _stringImages.keys.elementAt(index);
                           final imagePath = _stringImages[stringName]!;
                           final isInStock = _stringStatus[stringName] ?? true;
+                            final isUpdated =
+                              _costUpdatedByString[stringName] == true;
                           
                           return Card(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -335,12 +384,21 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                       child: TextField(
                                         controller: _costControllers[stringName],
                                         keyboardType: TextInputType.number,
+                                        onChanged: (_) {
+                                          if (_costUpdatedByString[stringName] ==
+                                              true) {
+                                            setState(() {
+                                              _costUpdatedByString[stringName] =
+                                                  false;
+                                            });
+                                          }
+                                        },
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
                                         ),
                                         decoration: InputDecoration(
-                                          hintText: '0',
+                                          hintText: 'No Firestore cost',
                                           hintStyle: TextStyle(
                                             color: Colors.white.withOpacity(0.5),
                                           ),
@@ -371,10 +429,16 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                     ),
                                     const SizedBox(width: 8),
                                     ElevatedButton(
-                                      onPressed: () => _confirmStringCost(stringName),
+                                      onPressed: isUpdated
+                                          ? null
+                                          : () => _confirmStringCost(stringName),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFB3A369),
+                                        backgroundColor: isUpdated
+                                            ? Colors.green
+                                            : const Color(0xFFB3A369),
                                         foregroundColor: Colors.white,
+                                        disabledBackgroundColor: Colors.green,
+                                        disabledForegroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(8),
                                         ),
@@ -383,8 +447,8 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                           vertical: 8,
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Confirm',
+                                      child: Text(
+                                        isUpdated ? 'Updated' : 'Update',
                                         style: TextStyle(fontSize: 12),
                                       ),
                                     ),

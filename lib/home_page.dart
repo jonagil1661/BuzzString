@@ -236,15 +236,11 @@ class _HomePageState extends State<HomePage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      '• Stringing service is typically completed by the next club time',
-                                      style: TextStyle(color: Colors.white70),
-                                    ),
-                                    const Text(
                                       '• Rackets may be dropped off/picked up during club times',
                                       style: TextStyle(color: Colors.white70),
                                     ),
                                     const Text(
-                                      '• Track your stringing service in real-time',
+                                      '• Track your stringing progress in real time',
                                       style: TextStyle(color: Colors.white70),
                                     ),
                                     const Text(
@@ -262,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.0.3',
+                        'Version 2.1.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
