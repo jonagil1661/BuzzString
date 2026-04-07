@@ -8,7 +8,8 @@ class GoogleLoginPage extends StatefulWidget {
   State<GoogleLoginPage> createState() => _GoogleLoginPageState();
 }
 
-class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderStateMixin {
+class _GoogleLoginPageState extends State<GoogleLoginPage>
+    with TickerProviderStateMixin {
   final AuthService _authService = AuthService();
   bool _isHovered = false;
   late AnimationController _fadeController;
@@ -21,7 +22,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -34,7 +35,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(
       begin: 0.3,
       end: 1.0,
@@ -42,7 +43,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
       parent: _fadeController,
       curve: Curves.easeInOut,
     ));
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
@@ -50,7 +51,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
       parent: _slideController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _scaleAnimation = Tween<double>(
       begin: 0.9,
       end: 1.0,
@@ -58,7 +59,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
       parent: _scaleController,
       curve: Curves.elasticOut,
     ));
-    
+
     _fadeController.forward();
     Future.delayed(const Duration(milliseconds: 200), () {
       _slideController.forward();
@@ -79,7 +80,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
   Future<void> _signInWithGoogle() async {
     try {
       final userCredential = await _authService.signInWithGoogle();
-      
+
       if (userCredential?.user != null) {
         Navigator.pushReplacementNamed(context, '/');
       }
@@ -110,7 +111,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
         ),
         child: Center(
           child: Container(
-            width: MediaQuery.of(context).size.width > 600 
+            width: MediaQuery.of(context).size.width > 600
                 ? MediaQuery.of(context).size.width * 0.6
                 : MediaQuery.of(context).size.width * 0.9,
             constraints: const BoxConstraints(maxWidth: 600),
@@ -147,7 +148,7 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
                               child: Transform.rotate(
                                 angle: (1 - value) * 0.3,
                                 child: Image.asset(
-                                  'assets/images/buzz_string_logo.png',
+                                  'assets/images/buzzstring_logo.png',
                                   height: 150,
                                   width: 150,
                                 ),
@@ -162,7 +163,8 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
                             end: Offset.zero,
                           ).animate(CurvedAnimation(
                             parent: _slideController,
-                            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+                            curve: const Interval(0.2, 1.0,
+                                curve: Curves.easeOutCubic),
                           )),
                           child: const Text(
                             'Welcome to BuzzString',
@@ -182,7 +184,8 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
                               end: 1.0,
                             ).animate(CurvedAnimation(
                               parent: _fadeController,
-                              curve: const Interval(0.4, 1.0, curve: Curves.easeInOut),
+                              curve: const Interval(0.4, 1.0,
+                                  curve: Curves.easeInOut),
                             )),
                             child: const Text(
                               'Sign Up or Log In with Google to get started',
@@ -204,25 +207,29 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
                             return Transform.scale(
                               scale: value,
                               child: MouseRegion(
-                                onEnter: (_) => setState(() => _isHovered = true),
-                                onExit: (_) => setState(() => _isHovered = false),
+                                onEnter: (_) =>
+                                    setState(() => _isHovered = true),
+                                onExit: (_) =>
+                                    setState(() => _isHovered = false),
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  transform: Matrix4.identity()..scale(_isHovered ? 1.1 : 1.0),
+                                  transform: Matrix4.identity()
+                                    ..scale(_isHovered ? 1.1 : 1.0),
                                   child: ElevatedButton.icon(
-                  onPressed: _signInWithGoogle,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB3A369),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                    textStyle: const TextStyle(fontSize: 18),
-                  ),
-                  icon: Image.asset(
-                    'assets/images/google_logo.png',
-                    height: 20,
-                    width: 20,
-                  ),
-                  label: const Text('Google'),
+                                    onPressed: _signInWithGoogle,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFB3A369),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 40, vertical: 20),
+                                      textStyle: const TextStyle(fontSize: 18),
+                                    ),
+                                    icon: Image.asset(
+                                      'assets/images/google_logo.png',
+                                      height: 20,
+                                      width: 20,
+                                    ),
+                                    label: const Text('Google'),
                                   ),
                                 ),
                               ),
@@ -241,4 +248,3 @@ class _GoogleLoginPageState extends State<GoogleLoginPage> with TickerProviderSt
     );
   }
 }
-

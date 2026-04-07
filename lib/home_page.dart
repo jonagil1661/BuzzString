@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 20),
                     Image.asset(
-                      'assets/images/buzz_string_logo.png',
+                      'assets/images/buzzstring_logo.png',
                       height: 150,
                       width: 150,
                     ),
@@ -258,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.1.1',
+                        'Version 2.2.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
