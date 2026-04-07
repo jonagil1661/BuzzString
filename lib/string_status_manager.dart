@@ -21,16 +21,13 @@ class StringStatusManager {
 
   Future<bool> isInStock(String stringName) async {
     try {
-      final doc = await _firestore
-          .collection(_collectionName)
-          .doc(_getDocumentId(stringName))
-          .get();
-      if (doc.exists) {
-        return doc.data()?['availability'] ?? true;
-      } else {
-        await _createStringDocument(stringName);
-        return true;
-      }
+      final doc = await _firestore.collection(_collectionName).doc(_getDocumentId(stringName)).get();
+          if (doc.exists) {
+            return doc.data()?['availability'] ?? true;
+          } else {
+            await _createStringDocument(stringName);
+            return true;
+          }
     } catch (e) {
       print('Error checking stock status: $e');
       return true; // Default to in stock if error occurs
@@ -69,10 +66,7 @@ class StringStatusManager {
 
   Future<double?> getCost(String stringName) async {
     try {
-      final doc = await _firestore
-          .collection(_collectionName)
-          .doc(_getDocumentId(stringName))
-          .get();
+      final doc = await _firestore.collection(_collectionName).doc(_getDocumentId(stringName)).get();
       if (doc.exists) {
         return (doc.data()?['cost'] as num?)?.toDouble();
       }
@@ -85,10 +79,7 @@ class StringStatusManager {
 
   Future<void> _createStringDocument(String stringName) async {
     try {
-      await _firestore
-          .collection(_collectionName)
-          .doc(_getDocumentId(stringName))
-          .set({
+      await _firestore.collection(_collectionName).doc(_getDocumentId(stringName)).set({
         'availability': true,
       });
     } catch (e) {
@@ -100,32 +91,29 @@ class StringStatusManager {
     try {
       print('=== INITIALIZING STRING AVAILABILITY ===');
       print('Collection name: $_collectionName');
-
+      
       for (String stringName in _stringCosts.keys) {
         final docId = _getDocumentId(stringName);
         print('Processing: $stringName -> Document ID: $docId');
-
+        
         final docData = {
           'availability': true,
           'cost': _stringCosts[stringName] ?? 20,
         };
         print('Document data: $docData');
-
-        await _firestore
-            .collection(_collectionName)
-            .doc(docId)
-            .set(docData, SetOptions(merge: true));
+        
+        await _firestore.collection(_collectionName).doc(docId).set(docData, SetOptions(merge: true));
         print('✅ Successfully created/updated document: $docId');
       }
-
+      
       print('=== INITIALIZATION COMPLETE ===');
-
+      
       final snapshot = await _firestore.collection(_collectionName).get();
-      print(
-          'Verification: Found ${snapshot.docs.length} documents in collection');
+      print('Verification: Found ${snapshot.docs.length} documents in collection');
       for (var doc in snapshot.docs) {
         print('Document ID: ${doc.id}, Data: ${doc.data()}');
       }
+      
     } catch (e) {
       print('❌ Error initializing string availability: $e');
       print('Error details: ${e.toString()}');
@@ -148,12 +136,12 @@ class StringStatusManager {
     try {
       final snapshot = await _firestore.collection(_collectionName).get();
       Map<String, bool> statusMap = {};
-
+      
       for (var doc in snapshot.docs) {
         final stringName = _getStringNameFromDocumentId(doc.id);
         statusMap[stringName] = doc.data()['availability'] ?? true;
       }
-
+      
       return statusMap;
     } catch (e) {
       print('Error getting all status: $e');
@@ -164,15 +152,16 @@ class StringStatusManager {
   Future<void> testFirestoreConnection() async {
     try {
       print('=== TESTING FIRESTORE CONNECTION ===');
-
+      
       await _firestore.collection('test').doc('connection').set({
         'timestamp': FieldValue.serverTimestamp(),
         'test': true,
       });
       print('✅ Firestore connection successful');
-
+      
       await _firestore.collection('test').doc('connection').delete();
       print('✅ Test document cleaned up');
+      
     } catch (e) {
       print('❌ Firestore connection failed: $e');
     }

@@ -66,8 +66,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
           final firestoreCost = (data['cost'] as num?)?.toDouble();
           if (firestoreCost != null) {
             _stringCosts[stringName] = firestoreCost;
-            _costControllers[stringName]?.text =
-                firestoreCost.toStringAsFixed(0);
+            _costControllers[stringName]?.text = firestoreCost.toStringAsFixed(0);
             _costUpdatedByString[stringName] = true;
           } else {
             _stringCosts.remove(stringName);
@@ -98,7 +97,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     final statusManager = StringStatusManager();
     Map<String, bool> tempStatus = {};
     Map<String, double> tempCosts = {};
-
+    
     for (String stringName in _stringImages.keys) {
       tempStatus[stringName] = await statusManager.isInStock(stringName);
       final cost = await statusManager.getCost(stringName);
@@ -108,17 +107,17 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
       } else {
         _costUpdatedByString[stringName] = false;
       }
-
+      
       if (!_costControllers.containsKey(stringName)) {
         _costControllers[stringName] = TextEditingController();
       }
     }
-
+    
     if (mounted) {
       setState(() {
         _stringStatus = tempStatus;
         _stringCosts = tempCosts;
-
+        
         for (String stringName in _stringImages.keys) {
           final cost = _stringCosts[stringName];
           _costControllers[stringName]!.text =
@@ -130,7 +129,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
 
   Future<void> _updateStringStatus(String stringName, bool isInStock) async {
     print('Updating string status for $stringName to $isInStock');
-
+    
     setState(() {
       _stringStatus[stringName] = isInStock;
     });
@@ -152,7 +151,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     final controller = _costControllers[stringName];
     if (controller == null) return;
     final previousCost = _stringCosts[stringName];
-
+    
     final newCost = double.tryParse(controller.text);
     if (newCost == null || newCost <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -165,7 +164,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
     }
 
     print('Confirming string cost for $stringName to $newCost');
-
+    
     setState(() {
       _stringCosts[stringName] = newCost;
     });
@@ -225,7 +224,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
         ),
         child: Center(
           child: Container(
-            width: MediaQuery.of(context).size.width > 600
+            width: MediaQuery.of(context).size.width > 600 
                 ? MediaQuery.of(context).size.width * 0.6
                 : MediaQuery.of(context).size.width * 0.9,
             constraints: const BoxConstraints(maxWidth: 600),
@@ -242,41 +241,40 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
             ),
             clipBehavior: Clip.antiAlias,
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(40.0),
-                child: Column(
-                  children: [
-                    Row(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40.0),
+                    child: Column(
                       children: [
-                        IconButton(
-                          icon:
-                              const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            "Update String Types",
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              onPressed: () => Navigator.pop(context),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
+                            const Expanded(
+                              child: Text(
+                                "Update String Types",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(width: 48), // To balance the back button
+                          ],
                         ),
-                        const SizedBox(width: 48), // To balance the back button
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Manage String Availability',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Manage String Availability',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                     const SizedBox(height: 20),
                     const Text(
                       'Toggle switches to control which string types are available to customers.',
@@ -292,18 +290,18 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _stringImages.length,
                       itemBuilder: (context, index) {
-                        final stringName = _stringImages.keys.elementAt(index);
-                        final imagePath = _stringImages[stringName]!;
-                        final isInStock = _stringStatus[stringName] ?? true;
-                        final isUpdated =
-                            _costUpdatedByString[stringName] == true;
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          color: Colors.white.withOpacity(0.1),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
+                          final stringName = _stringImages.keys.elementAt(index);
+                          final imagePath = _stringImages[stringName]!;
+                          final isInStock = _stringStatus[stringName] ?? true;
+                            final isUpdated =
+                              _costUpdatedByString[stringName] == true;
+                          
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            color: Colors.white.withOpacity(0.1),
+                            child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child:                             Column(
                               children: [
                                 Row(
                                   children: [
@@ -322,8 +320,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                         child: Image.asset(
                                           imagePath,
                                           fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (context, error, stackTrace) {
+                                          errorBuilder: (context, error, stackTrace) {
                                             return Container(
                                               color: Colors.grey.shade300,
                                               child: const Icon(
@@ -338,8 +335,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             stringName,
@@ -351,14 +347,10 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            isInStock
-                                                ? 'In Stock'
-                                                : 'Out of Stock',
+                                            isInStock ? 'In Stock' : 'Out of Stock',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: isInStock
-                                                  ? Colors.green
-                                                  : Colors.red,
+                                              color: isInStock ? Colors.green : Colors.red,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -368,14 +360,12 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                     Switch(
                                       value: isInStock,
                                       onChanged: (value) {
-                                        print(
-                                            'Switch changed for $stringName: $value');
+                                        print('Switch changed for $stringName: $value');
                                         _updateStringStatus(stringName, value);
                                       },
                                       activeColor: Colors.green,
                                       inactiveThumbColor: Colors.red,
-                                      inactiveTrackColor:
-                                          Colors.red.withOpacity(0.3),
+                                      inactiveTrackColor: Colors.red.withOpacity(0.3),
                                     ),
                                   ],
                                 ),
@@ -392,12 +382,10 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: TextField(
-                                        controller:
-                                            _costControllers[stringName],
+                                        controller: _costControllers[stringName],
                                         keyboardType: TextInputType.number,
                                         onChanged: (_) {
-                                          if (_costUpdatedByString[
-                                                  stringName] ==
+                                          if (_costUpdatedByString[stringName] ==
                                               true) {
                                             setState(() {
                                               _costUpdatedByString[stringName] =
@@ -412,34 +400,27 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                         decoration: InputDecoration(
                                           hintText: 'No Firestore cost',
                                           hintStyle: TextStyle(
-                                            color:
-                                                Colors.white.withOpacity(0.5),
+                                            color: Colors.white.withOpacity(0.5),
                                           ),
                                           border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(8),
                                             borderSide: BorderSide(
-                                              color:
-                                                  Colors.white.withOpacity(0.3),
+                                              color: Colors.white.withOpacity(0.3),
                                             ),
                                           ),
                                           enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(8),
                                             borderSide: BorderSide(
-                                              color:
-                                                  Colors.white.withOpacity(0.3),
+                                              color: Colors.white.withOpacity(0.3),
                                             ),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(8),
                                             borderSide: const BorderSide(
                                               color: Colors.white,
                                             ),
                                           ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
+                                          contentPadding: const EdgeInsets.symmetric(
                                             horizontal: 12,
                                             vertical: 8,
                                           ),
@@ -450,8 +431,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                     ElevatedButton(
                                       onPressed: isUpdated
                                           ? null
-                                          : () =>
-                                              _confirmStringCost(stringName),
+                                          : () => _confirmStringCost(stringName),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: isUpdated
                                             ? Colors.green
@@ -460,8 +440,7 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                         disabledBackgroundColor: Colors.green,
                                         disabledForegroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
@@ -477,9 +456,9 @@ class _UpdateStringTypesState extends State<UpdateStringTypes> {
                                 ),
                               ],
                             ),
-                          ),
-                        );
-                      },
+                              ),
+                          );
+                        },
                     ),
                   ],
                 ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:go_router/go_router.dart';
-
-import 'app/app_router.dart';
 import 'auth_service.dart';
+import 'request_page.dart';
+import 'tracking_page.dart';
+import 'next_pickup_dropoff_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -110,7 +110,13 @@ class _HomePageState extends State<HomePage> {
                             ..scale(_isRequestHovered ? 1.05 : 1.0),
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              context.push(AppPaths.customerRequest);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const StringingRequestPage(),
+                                ),
+                              );
                             },
                             icon: const Icon(Icons.add_circle_outline),
                             label: const Text(
@@ -141,7 +147,12 @@ class _HomePageState extends State<HomePage> {
                             ..scale(_isTrackHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              context.push(AppPaths.customerTracking);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const TrackingPage(),
+                                ),
+                              );
                             },
                             icon: const Icon(Icons.track_changes),
                             label: const Text(
@@ -174,7 +185,13 @@ class _HomePageState extends State<HomePage> {
                             ..scale(_isPickupDropoffHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              context.push(AppPaths.customerPickupDropoff);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NextPickupDropoffPage(),
+                                ),
+                              );
                             },
                             icon: const Icon(Icons.event_available),
                             label: const Text(
@@ -241,7 +258,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.1.1',
+                        'Version 2.1.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
@@ -264,7 +281,7 @@ class _HomePageState extends State<HomePage> {
       await authService.signOut();
 
       if (context.mounted) {
-        context.go(AppPaths.login);
+        Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
       if (context.mounted) {
