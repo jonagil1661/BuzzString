@@ -12,8 +12,17 @@ class StringerDashboard extends StatefulWidget {
 }
 
 class _StringerDashboardState extends State<StringerDashboard> {
+  static const List<String> _progressStages = [
+    'Not received',
+    'Received',
+    'In progress',
+    'Ready for pickup',
+    'Picked up',
+  ];
+
   final Set<String> _expandedRequests = <String>{};
   final Set<String> _sendingEmailRequestIds = <String>{};
+  final Set<String> _selectedProgressFilters = <String>{};
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
@@ -53,8 +62,7 @@ class _StringerDashboardState extends State<StringerDashboard> {
     return '$racket $firstName $lastName $displayName'.toLowerCase();
   }
 
-    bool _matchesSearchQuery(
-      Map<String, dynamic> requestData, String requestId) {
+  bool _matchesSearchQuery(Map<String, dynamic> requestData, String requestId) {
     final query = _searchQuery;
     if (query.isEmpty) {
       return true;
@@ -67,6 +75,21 @@ class _StringerDashboardState extends State<StringerDashboard> {
 
     // Keep cards visible until a search index is available to avoid flicker.
     return true;
+  }
+
+  String _resolveProgress(Map<String, dynamic> requestData) {
+    final rawProgress = (requestData['progress'] as String?)?.trim();
+    if (rawProgress != null && rawProgress.isNotEmpty) {
+      return rawProgress;
+    }
+    return 'Not received';
+  }
+
+  bool _matchesProgressFilter(Map<String, dynamic> requestData) {
+    if (_selectedProgressFilters.isEmpty) {
+      return true;
+    }
+    return _selectedProgressFilters.contains(_resolveProgress(requestData));
   }
 
   Future<Map<String, dynamic>?> _getUserData(String userId) async {
@@ -233,6 +256,49 @@ class _StringerDashboardState extends State<StringerDashboard> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _progressStages.map((stage) {
+                          final stageColor = _getProgressColor(stage);
+                          final isSelected =
+                              _selectedProgressFilters.contains(stage);
+                          return FilterChip(
+                            label: Text(stage),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedProgressFilters.add(stage);
+                                } else {
+                                  _selectedProgressFilters.remove(stage);
+                                }
+                              });
+                            },
+                            selectedColor: Color.alphaBlend(
+                              Colors.black.withOpacity(0.45),
+                              stageColor,
+                            ),
+                            checkmarkColor: Colors.white,
+                            labelStyle: TextStyle(
+                              color: Colors.white,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? stageColor
+                                  : Colors.white.withOpacity(0.25),
+                            ),
+                            backgroundColor: const Color(0xFF0D233A),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     StreamBuilder<QuerySnapshot>(
                       stream: _requestsStream,
                       builder: (context, snapshot) {
@@ -275,7 +341,8 @@ class _StringerDashboardState extends State<StringerDashboard> {
 
                         // Pre-load user data for all requests
                         for (final request in requests) {
-                          final requestData = request.data() as Map<String, dynamic>;
+                          final requestData =
+                              request.data() as Map<String, dynamic>;
                           final userId = request.reference.parent.parent!.id;
                           _requestSearchIndex[request.id] = _buildSearchText(
                             requestData: requestData,
@@ -284,7 +351,8 @@ class _StringerDashboardState extends State<StringerDashboard> {
                           if (!_userCache.containsKey(userId) &&
                               !_userFutures.containsKey(userId)) {
                             _getUserData(userId).then((userData) {
-                              _requestSearchIndex[request.id] = _buildSearchText(
+                              _requestSearchIndex[request.id] =
+                                  _buildSearchText(
                                 requestData: requestData,
                                 userData: userData,
                               );
@@ -295,117 +363,119 @@ class _StringerDashboardState extends State<StringerDashboard> {
                           }
                         }
 
-                        final hasMatches = requests.any((request) {
+                        final visibleRequests = requests.where((request) {
                           final data = request.data() as Map<String, dynamic>;
-                          return _matchesSearchQuery(data, request.id);
-                        });
+                          return _matchesSearchQuery(data, request.id) &&
+                              _matchesProgressFilter(data);
+                        }).toList();
+
+                        final hasMatches = visibleRequests.isNotEmpty;
 
                         return Column(
                           children: [
-                            ...requests.map((request) {
-                            final data = request.data() as Map<String, dynamic>;
-                            final matchesSearch =
-                              _matchesSearchQuery(data, request.id);
-                            final timestamp = data['timestamp'] as Timestamp?;
-                            final dateTime = timestamp?.toDate();
-                            final isExpanded =
-                                _expandedRequests.contains(request.id);
+                            ...visibleRequests.map((request) {
+                              final data =
+                                  request.data() as Map<String, dynamic>;
+                              final timestamp = data['timestamp'] as Timestamp?;
+                              final dateTime = timestamp?.toDate();
+                              final isExpanded =
+                                  _expandedRequests.contains(request.id);
 
-                            return AnimatedSize(
-                              duration: const Duration(milliseconds: 220),
-                              curve: Curves.easeInOut,
-                              alignment: Alignment.topCenter,
-                              child: matchesSearch
-                                  ? Card(
-                                      margin:
-                                          const EdgeInsets.only(bottom: 8),
-                                      color: Colors.white.withOpacity(0.1),
-                                      child: InkWell(
-                                        onTap: () {
-                                          final currentScrollOffset =
-                                              _scrollController.hasClients
-                                                  ? _scrollController.offset
-                                                  : 0.0;
-                                          setState(() {
-                                            if (isExpanded) {
-                                              _expandedRequests.remove(
-                                                  request.id);
-                                            } else {
-                                              _expandedRequests
-                                                  .add(request.id);
-                                            }
-                                          });
-                                          // Restore scroll position after rebuild
-                                          WidgetsBinding.instance
-                                              .addPostFrameCallback((_) {
-                                            if (_scrollController.hasClients) {
-                                              _scrollController.jumpTo(
-                                                  currentScrollOffset);
-                                            }
-                                          });
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(12),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                              return AnimatedSize(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeInOut,
+                                alignment: Alignment.topCenter,
+                                child: Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  color: Colors.white.withOpacity(0.1),
+                                  child: InkWell(
+                                    onTap: () {
+                                      final currentScrollOffset =
+                                          _scrollController.hasClients
+                                              ? _scrollController.offset
+                                              : 0.0;
+                                      setState(() {
+                                        if (isExpanded) {
+                                          _expandedRequests.remove(request.id);
+                                        } else {
+                                          _expandedRequests.add(request.id);
+                                        }
+                                      });
+                                      // Restore scroll position after rebuild
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                        if (_scrollController.hasClients) {
+                                          _scrollController
+                                              .jumpTo(currentScrollOffset);
+                                        }
+                                      });
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Request ID: ${request.id}',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                FutureBuilder<
-                                                    Map<String, dynamic>?>(
-                                                  future: _getUserData(request
-                                                      .reference
-                                                      .parent
-                                                      .parent!
-                                                      .id),
-                                                  builder:
-                                                      (context, userSnapshot) {
-                                                    if (userSnapshot
-                                                            .connectionState ==
-                                                        ConnectionState
-                                                            .waiting) {
-                                                      return const Text(
-                                                          'Loading...',
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  Colors.grey));
-                                                    }
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      'Request ID: ${request.id}',
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    FutureBuilder<
+                                                        Map<String, dynamic>?>(
+                                                      future: _getUserData(
+                                                          request
+                                                              .reference
+                                                              .parent
+                                                              .parent!
+                                                              .id),
+                                                      builder: (context,
+                                                          userSnapshot) {
+                                                        if (userSnapshot
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return const Text(
+                                                              'Loading...',
+                                                              style: TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .grey));
+                                                        }
 
-                                                    final userData =
-                                                        userSnapshot.data;
-                                                    final displayName =
-                                                        userData?['displayName']
-                                                            as String?;
-                                                    final firstName =
-                                                        userData?['firstName']
-                                                            as String?;
-                                                    final lastName =
-                                                        userData?['lastName']
-                                                            as String?;
-                                                    final email =
-                                                        userData?['email']
-                                                            as String?;
+                                                        final userData =
+                                                            userSnapshot.data;
+                                                        final displayName =
+                                                            userData?[
+                                                                    'displayName']
+                                                                as String?;
+                                                        final firstName =
+                                                            userData?[
+                                                                    'firstName']
+                                                                as String?;
+                                                        final lastName =
+                                                            userData?[
+                                                                    'lastName']
+                                                                as String?;
+                                                        final email =
+                                                            userData?['email']
+                                                                as String?;
 
-                                                    String customerName =
-                                                        displayName ??
+                                                        String customerName = displayName ??
                                                             ((firstName !=
                                                                         null ||
                                                                     lastName !=
@@ -418,57 +488,110 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                                                 .first ??
                                                             'Unknown Customer';
 
-                                                    return Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          customerName,
-                                                          style:
-                                                              const TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontSize: 13,
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                        if (email != null) ...[
-                                                          const SizedBox(
-                                                              height: 2),
-                                                          Text(
-                                                            email,
-                                                            style:
-                                                                const TextStyle(
-                                                              fontSize: 11,
-                                                              color: Colors
-                                                                  .white70,
+                                                        return Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              customerName,
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                fontSize: 13,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
                                                             ),
-                                                          ),
-                                                        ],
-                                                        const SizedBox(
-                                                            height: 2),
-                                                        Text(
-                                                          data['racket'] ??
-                                                              'Unknown racket',
+                                                            if (email !=
+                                                                null) ...[
+                                                              const SizedBox(
+                                                                  height: 2),
+                                                              Text(
+                                                                email,
+                                                                style:
+                                                                    const TextStyle(
+                                                                  fontSize: 11,
+                                                                  color: Colors
+                                                                      .white70,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                            const SizedBox(
+                                                                height: 2),
+                                                            Text(
+                                                              data['racket'] ??
+                                                                  'Unknown racket',
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 12,
+                                                                color: Colors
+                                                                    .white70,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Column(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 3,
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: _getProgressColor(
+                                                              _resolveProgress(
+                                                                  data)),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
+                                                        child: Text(
+                                                          _resolveProgress(
+                                                              data),
                                                           style:
                                                               const TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                Colors.white70,
+                                                            color: Colors.white,
+                                                            fontSize: 10,
+                                                            fontWeight:
+                                                                FontWeight.bold,
                                                           ),
                                                         ),
-                                                      ],
-                                                    );
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Column(
-                                            children: [
-                                              Row(
-                                                children: [
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      IconButton(
+                                                        icon: const Icon(
+                                                            Icons.delete,
+                                                            color: Colors.red,
+                                                            size: 20),
+                                                        onPressed: () =>
+                                                            _showDeleteDialog(
+                                                                request
+                                                                    .reference
+                                                                    .parent
+                                                                    .parent!
+                                                                    .id,
+                                                                request.id),
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        constraints:
+                                                            const BoxConstraints(),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 4),
                                                   Container(
                                                     padding: const EdgeInsets
                                                         .symmetric(
@@ -476,16 +599,20 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                                       vertical: 3,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color: _getProgressColor(
-                                                          data['progress'] ??
-                                                              'Not received'),
+                                                      color:
+                                                          (data['paidStatus'] ==
+                                                                  true)
+                                                              ? Colors.green
+                                                              : Colors.orange,
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               8),
                                                     ),
                                                     child: Text(
-                                                      data['progress'] ??
-                                                          'Not received',
+                                                      (data['paidStatus'] ==
+                                                              true)
+                                                          ? 'Paid'
+                                                          : 'Unpaid',
                                                       style: const TextStyle(
                                                         color: Colors.white,
                                                         fontSize: 10,
@@ -494,223 +621,200 @@ class _StringerDashboardState extends State<StringerDashboard> {
                                                       ),
                                                     ),
                                                   ),
-                                                  const SizedBox(width: 8),
-                                                  IconButton(
-                                                    icon: const Icon(
-                                                        Icons.delete,
-                                                        color: Colors.red,
-                                                        size: 20),
-                                                    onPressed: () =>
-                                                        _showDeleteDialog(
-                                                            request
-                                                                .reference
-                                                                .parent
-                                                                .parent!
-                                                                .id,
-                                                            request.id),
-                                                    padding: EdgeInsets.zero,
-                                                    constraints:
-                                                        const BoxConstraints(),
-                                                  ),
                                                 ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 6,
-                                                  vertical: 3,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: (data['paidStatus'] ==
-                                                          true)
-                                                      ? Colors.green
-                                                      : Colors.orange,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  (data['paidStatus'] == true)
-                                                      ? 'Paid'
-                                                      : 'Unpaid',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
                                               ),
                                             ],
                                           ),
-                                        ],
-                                      ),
-                                      AnimatedSize(
-                                        duration:
-                                            const Duration(milliseconds: 280),
-                                        curve: Curves.easeInOutCubic,
-                                        alignment: Alignment.topCenter,
-                                        child: isExpanded
-                                            ? Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  const SizedBox(height: 12),
-                                                  const Divider(height: 1),
-                                                  const SizedBox(height: 12),
-                                                  Text(
-                                                      'Colors: ${_formatColors(data['racketColors'])}',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.white)),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                      'Grip Color: ${data['gripColor'] ?? 'Unknown'}',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.white)),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                      'String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.white)),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                      'Tension: ${data['tension'] ?? 'Unknown'} lbs',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.white)),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                      'Payment Method: ${data['paymentMethod'] ?? 'Unknown'}',
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.white)),
-                                                  if (data['additionalInfo'] !=
-                                                          null &&
-                                                      data['additionalInfo']
-                                                          .toString()
-                                                          .isNotEmpty) ...[
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                        'Additional Info: ${data['additionalInfo']}',
-                                                        style: const TextStyle(
-                                                            fontSize: 12,
-                                                            color:
-                                                                Colors.white)),
-                                                  ],
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    'Submitted: ${_formatDateTime(dateTime)}',
-                                                    style: const TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.white70,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  Row(
+                                          AnimatedSize(
+                                            duration: const Duration(
+                                                milliseconds: 280),
+                                            curve: Curves.easeInOutCubic,
+                                            alignment: Alignment.topCenter,
+                                            child: isExpanded
+                                                ? Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            const Text(
-                                                                'Payment Status:',
-                                                                style: TextStyle(
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      const Divider(height: 1),
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      Text(
+                                                          'Colors: ${_formatColors(data['racketColors'])}',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .white)),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                          'Grip Color: ${data['gripColor'] ?? 'Unknown'}',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .white)),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                          'String Type: ${(data['stringType'] ?? 'Unknown').toString().replaceAll('\n', ' ')} - \$${data['cost'] ?? 'N/A'}',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .white)),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                          'Tension: ${data['tension'] ?? 'Unknown'} lbs',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .white)),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                          'Payment Method: ${data['paymentMethod'] ?? 'Unknown'}',
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .white)),
+                                                      if (data['additionalInfo'] !=
+                                                              null &&
+                                                          data['additionalInfo']
+                                                              .toString()
+                                                              .isNotEmpty) ...[
+                                                        const SizedBox(
+                                                            height: 4),
+                                                        Text(
+                                                            'Additional Info: ${data['additionalInfo']}',
+                                                            style:
+                                                                const TextStyle(
                                                                     fontSize:
                                                                         12,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
                                                                     color: Colors
                                                                         .white)),
-                                                            const SizedBox(
-                                                                height: 4),
-                                                            Switch(
-                                                              value: data[
-                                                                      'paidStatus'] ==
-                                                                  true,
-                                                              onChanged:
-                                                                  (value) {
-                                                                _updateRequestStatus(
+                                                      ],
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        'Submitted: ${_formatDateTime(dateTime)}',
+                                                        style: const TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors.white70,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                const Text(
+                                                                    'Payment Status:',
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            12,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .bold,
+                                                                        color: Colors
+                                                                            .white)),
+                                                                const SizedBox(
+                                                                    height: 4),
+                                                                Switch(
+                                                                  value: data[
+                                                                          'paidStatus'] ==
+                                                                      true,
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    _updateRequestStatus(
+                                                                        request
+                                                                            .reference
+                                                                            .parent
+                                                                            .parent!
+                                                                            .id,
+                                                                        request
+                                                                            .id,
+                                                                        'paidStatus',
+                                                                        value);
+                                                                  },
+                                                                  activeColor:
+                                                                      Colors
+                                                                          .green,
+                                                                  inactiveThumbColor:
+                                                                      Colors
+                                                                          .orange,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                const Text(
+                                                                    'Progress:',
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            12,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .bold,
+                                                                        color: Colors
+                                                                            .white)),
+                                                                const SizedBox(
+                                                                    height: 4),
+                                                                _buildProgressButtons(
                                                                     request
                                                                         .reference
                                                                         .parent
                                                                         .parent!
                                                                         .id,
                                                                     request.id,
-                                                                    'paidStatus',
-                                                                    value);
-                                                              },
-                                                              activeColor:
-                                                                  Colors.green,
-                                                              inactiveThumbColor:
-                                                                  Colors.orange,
+                                                                    _resolveProgress(
+                                                                        data)),
+                                                              ],
                                                             ),
-                                                          ],
-                                                        ),
+                                                          ),
+                                                        ],
                                                       ),
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            const Text(
-                                                                'Progress:',
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        12,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                    color: Colors
-                                                                        .white)),
-                                                            const SizedBox(
-                                                                height: 4),
-                                                            _buildProgressButtons(
-                                                                request
-                                                                    .reference
-                                                                    .parent
-                                                                    .parent!
-                                                                    .id,
-                                                                request.id,
-                                                                data['progress'] ??
-                                                                    'Not received'),
-                                                          ],
+                                                      const SizedBox(
+                                                          height: 12),
+                                                      Align(
+                                                        alignment: Alignment
+                                                            .centerLeft,
+                                                        child:
+                                                            _buildReadyForPickupEmailButton(
+                                                          userId: request
+                                                              .reference
+                                                              .parent
+                                                              .parent!
+                                                              .id,
+                                                          requestId: request.id,
+                                                          currentProgress:
+                                                              _resolveProgress(
+                                                                  data),
+                                                          requestData: data,
                                                         ),
                                                       ),
                                                     ],
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child:
-                                                        _buildReadyForPickupEmailButton(
-                                                      userId: request.reference
-                                                          .parent.parent!.id,
-                                                      requestId: request.id,
-                                                      currentProgress:
-                                                          data['progress'] ??
-                                                              'Not received',
-                                                      requestData: data,
-                                                    ),
-                                                  ),
-                                                ],
-                                              )
-                                            : const SizedBox.shrink(),
+                                                  )
+                                                : const SizedBox.shrink(),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            );
-                          }).toList(),
+                                ),
+                              );
+                            }).toList(),
                             if (!hasMatches)
                               const Padding(
                                 padding: EdgeInsets.only(top: 8),
@@ -766,18 +870,10 @@ class _StringerDashboardState extends State<StringerDashboard> {
 
   Widget _buildProgressButtons(
       String userId, String requestId, String currentProgress) {
-    final progressStages = [
-      'Not received',
-      'Received',
-      'In progress',
-      'Ready for pickup',
-      'Picked up'
-    ];
-
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: progressStages.map((stage) {
+      children: _progressStages.map((stage) {
         final isSelected = stage == currentProgress;
         return ElevatedButton(
           onPressed: () =>
