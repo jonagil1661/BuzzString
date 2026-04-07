@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
+
+import 'app/app_router.dart';
 import 'auth_service.dart';
-import 'stringer_dashboard.dart';
-import 'update_string_types.dart';
-import 'statistics_page.dart';
-import 'plan_next_arrival_page.dart';
 
 class StringerHomePage extends StatefulWidget {
   const StringerHomePage({super.key});
@@ -112,13 +111,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                             ..scale(_isDashboardHovered ? 1.05 : 1.0),
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const StringerDashboard(),
-                                ),
-                              );
+                              context.push(AppPaths.stringerDashboard);
                             },
                             icon: const Icon(Icons.dashboard),
                             label: const Text(
@@ -151,13 +144,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                             ..scale(_isStringTypesHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const UpdateStringTypes(),
-                                ),
-                              );
+                              context.push(AppPaths.stringerUpdateStrings);
                             },
                             icon: const Icon(Icons.settings),
                             label: const Text(
@@ -190,13 +177,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                             ..scale(_isPlanArrivalHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const PlanNextArrivalPage(),
-                                ),
-                              );
+                              context.push(AppPaths.stringerPlanArrival);
                             },
                             icon: const Icon(Icons.event_note),
                             label: const Text(
@@ -227,12 +208,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                             ..scale(_isStatsHovered ? 1.05 : 1.0),
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const StatisticsPage(),
-                                ),
-                              );
+                              context.push(AppPaths.stringerStatistics);
                             },
                             icon: const Icon(Icons.analytics),
                             label: const Text(
@@ -303,7 +279,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.1.0',
+                        'Version 2.1.1',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
@@ -326,7 +302,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
       await authService.signOut();
 
       if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+        context.go(AppPaths.login);
       }
     } catch (e) {
       if (context.mounted) {
