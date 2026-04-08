@@ -4,6 +4,7 @@ import 'auth_service.dart';
 import 'request_page.dart';
 import 'tracking_page.dart';
 import 'next_pickup_dropoff_page.dart';
+import 'shop_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +17,7 @@ class _HomePageState extends State<HomePage> {
   bool _isRequestHovered = false;
   bool _isTrackHovered = false;
   bool _isPickupDropoffHovered = false;
+  bool _isShopHovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -211,6 +213,42 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => _isShopHovered = true),
+                        onExit: (_) => setState(() => _isShopHovered = false),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          transform: Matrix4.identity()
+                            ..scale(_isShopHovered ? 1.05 : 1.0),
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ShopPage(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.storefront),
+                            label: const Text(
+                              'Shop',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 40),
                     Card(
                       color: Colors.white.withOpacity(0.1),
@@ -244,6 +282,14 @@ class _HomePageState extends State<HomePage> {
                                       style: TextStyle(color: Colors.white70),
                                     ),
                                     const Text(
+                                      '• Get notified when your stringing is complete',
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                    const Text(
+                                      '• Shop for badminton accessories',
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                    const Text(
                                       '• Contact buzzstring.badminton@gmail.com for additional questions',
                                       style: TextStyle(color: Colors.white70),
                                     ),
@@ -258,7 +304,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.2.1',
+                        'Version 2.3.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,

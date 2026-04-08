@@ -5,6 +5,7 @@ import 'stringer_dashboard.dart';
 import 'update_string_types.dart';
 import 'statistics_page.dart';
 import 'plan_next_arrival_page.dart';
+import 'stringer_shop_page.dart';
 
 class StringerHomePage extends StatefulWidget {
   const StringerHomePage({super.key});
@@ -18,6 +19,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
   bool _isStringTypesHovered = false;
   bool _isPlanArrivalHovered = false;
   bool _isStatsHovered = false;
+  bool _isShopHovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -253,6 +255,43 @@ class _StringerHomePageState extends State<StringerHomePage> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    Center(
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => _isShopHovered = true),
+                        onExit: (_) => setState(() => _isShopHovered = false),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          transform: Matrix4.identity()
+                            ..scale(_isShopHovered ? 1.05 : 1.0),
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const StringerShopPage(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.storefront),
+                            label: const Text(
+                              'Shop',
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 32, vertical: 16),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Card(
                       color: Colors.white.withOpacity(0.1),
                       child: Padding(
@@ -303,7 +342,7 @@ class _StringerHomePageState extends State<StringerHomePage> {
                     const SizedBox(height: 20),
                     const Center(
                       child: Text(
-                        'Version 2.2.1',
+                        'Version 2.3.0',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white70,
